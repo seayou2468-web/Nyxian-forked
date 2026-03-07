@@ -390,6 +390,85 @@
                 }
             };
             break;
+        case NXProjectTypeSwiftApp:
+            plistList = @{
+                @"/Config/Project.plist": @{
+                    @"NXProjectFormat": @(NXProjectFormatFalcon),
+                    @"LDEExecutable": name,
+                    @"LDEDisplayName": name,
+                    @"LDEBundleID": bundleid,
+                    @"LDEBundleShortVersion": @"1.0",
+                    @"LDEBundleVersion": @"1.0",
+                    @"LDEProjectType": @(type),
+                    @"LDEVersion": [[UIDevice currentDevice] systemVersion],
+                    @"LDEMinimumVersion": [[UIDevice currentDevice] systemVersion],
+                    @"LDECompilerFlags": @[
+                        @"-target",
+                        @"arm64-apple-ios$(LDEMinimumVersion)",
+                        @"-sdk",
+                        @"$(SDKROOT)",
+                        @"-I$(SDKROOT)/usr/lib/swift",
+                        @"-I$(SDKROOT)/usr/include"
+                    ],
+                    @"LDELinkerFlags": @[
+                        @"-target",
+                        @"arm64-apple-ios$(LDEMinimumVersion)",
+                        @"-sdk",
+                        @"$(SDKROOT)",
+                        @"-L$(SDKROOT)/usr/lib/swift",
+                        @"-L$(SDKROOT)/usr/lib",
+                        @"-lc++",
+                        @"-framework",
+                        @"Foundation",
+                        @"-framework",
+                        @"UIKit",
+                        @"-framework",
+                        @"SwiftUI"
+                    ],
+                    @"LDEOutputPath": @"$(CACHEROOT)/Payload/$(LDEDisplayName).app/$(LDEExecutable)",
+                },
+                @"/Config/Entitlements.plist": @{
+                    @"com.apple.developer.team-identifier": @"TEAMID",
+                    @"application-identifier": @"TEAMID.$(LDEBundleID)",
+                    @"com.apple.developer.get-task-allowed": @(YES)
+                }
+            };
+            break;
+        case NXProjectTypeSwiftUtility:
+            plistList = @{
+                @"/Config/Project.plist": @{
+                    @"NXProjectFormat": @(NXProjectFormatFalcon),
+                    @"LDEExecutable": name,
+                    @"LDEDisplayName": name,
+                    @"LDEProjectType": @(type),
+                    @"LDEVersion": [[UIDevice currentDevice] systemVersion],
+                    @"LDEMinimumVersion": [[UIDevice currentDevice] systemVersion],
+                    @"LDECompilerFlags": @[
+                        @"-target",
+                        @"arm64-apple-ios$(LDEMinimumVersion)",
+                        @"-sdk",
+                        @"$(SDKROOT)",
+                        @"-I$(SDKROOT)/usr/lib/swift"
+                    ],
+                    @"LDELinkerFlags": @[
+                        @"-target",
+                        @"arm64-apple-ios$(LDEMinimumVersion)",
+                        @"-sdk",
+                        @"$(SDKROOT)",
+                        @"-L$(SDKROOT)/usr/lib/swift",
+                        @"-lc++"
+                    ],
+                    @"LDEOutputPath": @"$(CACHEROOT)/$(LDEExecutable)",
+                },
+                @"/Config/Entitlements.plist": @{
+                    @"com.apple.developer.get-task-allowed": @(YES)
+                }
+            };
+            break;
+
+
+
+
         default:
             plistList = @{
                 @"/Config/Project.plist": @{
@@ -415,6 +494,16 @@
         case NXProjectTypeUtility:
             [[NXCodeTemplate shared] generateCodeStructureFromTemplateScheme:NXCodeTemplateSchemeUtility withLanguage:NXCodeTemplateLanguageC withProjectName:name intoPath:projectPath];
             break;
+        case NXProjectTypeSwiftApp:
+            [[NXCodeTemplate shared] generateCodeStructureFromTemplateScheme:NXCodeTemplateSchemeApp withLanguage:NXCodeTemplateLanguageSwift withProjectName:name intoPath:projectPath];
+            break;
+        case NXProjectTypeSwiftUtility:
+            [[NXCodeTemplate shared] generateCodeStructureFromTemplateScheme:NXCodeTemplateSchemeUtility withLanguage:NXCodeTemplateLanguageSwift withProjectName:name intoPath:projectPath];
+            break;
+
+
+
+
         default:
             break;
     }
@@ -449,6 +538,13 @@
         {
             [utilityProjects addObject:project];
         }
+        else if(project.projectConfig.type == NXProjectTypeSwiftApp || project.projectConfig.type == NXProjectTypeSwiftUtility)
+        {
+             if(project.projectConfig.type == NXProjectTypeSwiftApp) [applicationProjects addObject:project];
+             else [utilityProjects addObject:project];
+        }
+
+
         else
         {
             [unknownProjects addObject:project];

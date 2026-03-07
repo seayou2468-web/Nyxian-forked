@@ -55,7 +55,7 @@ class MainSplitViewController: UISplitViewController, UISplitViewControllerDeleg
         }
         
         if #available(iOS 16.0, *),
-           self.project.projectConfig.type == NXProjectType.app.rawValue
+           self.(project.projectConfig.type == NXProjectType.app.rawValue || project.projectConfig.type == 7)
         {
             LDEBringApplicationSessionToFrontAssosiatedWithBundleIdentifier(self.project.projectConfig.bundleid)
         }
@@ -143,7 +143,7 @@ class SplitScreenDetailViewController: UIViewController {
                 NSLayoutConstraint.deactivate(oldConstraints)
             }
             
-            if self.project.projectConfig.type == NXProjectType.app.rawValue {
+            if self.(project.projectConfig.type == NXProjectType.app.rawValue || project.projectConfig.type == 7) {
                 self.logViewTopConstraint?.isActive = true
             }
             
@@ -177,12 +177,12 @@ class SplitScreenDetailViewController: UIViewController {
                     
                     constraints = [
                         vc.view.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-                        vc.view.bottomAnchor.constraint(equalTo: (self.project.projectConfig.type == NXProjectType.app.rawValue) ? logView!.topAnchor : view.bottomAnchor, constant: -16),
+                        vc.view.bottomAnchor.constraint(equalTo: (self.(project.projectConfig.type == NXProjectType.app.rawValue || project.projectConfig.type == 7)) ? logView!.topAnchor : view.bottomAnchor, constant: -16),
                         vc.view.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
                         vc.view.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
                     ]
                     
-                    if self.project.projectConfig.type == NXProjectType.app.rawValue {
+                    if self.(project.projectConfig.type == NXProjectType.app.rawValue || project.projectConfig.type == 7) {
                         self.logViewTopConstraint?.isActive = false
                         
                         constraints.append(contentsOf: [
@@ -349,7 +349,7 @@ class SplitScreenDetailViewController: UIViewController {
         super.viewDidLoad()
         self.view.backgroundColor = currentTheme?.gutterBackgroundColor
         
-        if self.project.projectConfig.type == NXProjectType.app.rawValue {
+        if self.(project.projectConfig.type == NXProjectType.app.rawValue || project.projectConfig.type == 7) {
             /* setting up logview */
             logView = LogTextView()
             logView!.isEditable = true
@@ -380,7 +380,7 @@ class SplitScreenDetailViewController: UIViewController {
         barButtons.append(UIBarButtonItem(image: UIImage(systemName: "play.fill"), primaryAction: UIAction { _ in
             NotificationCenter.default.post(name: NSNotification.Name("RunAct"), object: nil)
         }))
-        if self.project.projectConfig.type == NXProjectType.app.rawValue {
+        if self.(project.projectConfig.type == NXProjectType.app.rawValue || project.projectConfig.type == 7) {
             barButtons.append(UIBarButtonItem(image: UIImage(systemName: "archivebox.fill"), primaryAction: UIAction { [weak self] _ in
                 guard let self = self else { return }
                 buildProjectWithArgumentUI(targetViewController: self, project: self.project, buildType: .InstallPackagedApp)

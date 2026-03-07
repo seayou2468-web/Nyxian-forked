@@ -82,6 +82,18 @@ int CompileObject(int argc,
           outputFile:(NSString*)outputFilePath
               issues:(NSArray<Synitem*> * * _Nonnull)issues
 {
+    if([filePath hasSuffix:@".swift"])
+    {
+        NSString *command = [NSString stringWithFormat:@"swiftc %@ -c %@ -o %@", [_flags componentsJoinedByString:@" "], filePath, outputFilePath];
+        NSString *output = nil;
+        int retval = shell(command, 501, NULL, &output);
+        if(output)
+        {
+            *issues = [Synitem OfClangErrorWithString:output];
+        }
+        return retval;
+    }
+
 #if !JAILBREAK_ENV
     // Allocating a C array by the given _flags array
     const int argc = (int)[_flags count] + 2;

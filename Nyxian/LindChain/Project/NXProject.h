@@ -31,7 +31,9 @@ static NXProjectType const NXProjectTypeUtility = 2;
 static NXProjectType const NXProjectTypeLibrary = 3;
 static NXProjectType const NXProjectTypeLua = 4;        /* Not implemented yet */
 static NXProjectType const NXProjectTypePython = 5;     /* Not implemented yet */
-static NXProjectType const NXProjectTypeWeb = 6;        /* Not implemented yet */
+static NXProjectType const NXProjectTypeWeb = 6;
+static NXProjectType const NXProjectTypeSwiftApp = 7;
+static NXProjectType const NXProjectTypeSwiftUtility = 8;
 
 typedef int NXProjectFormat NS_TYPED_ENUM;
 static NXProjectFormat const NXProjectFormatKate = 0;

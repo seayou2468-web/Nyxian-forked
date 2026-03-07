@@ -27,6 +27,7 @@ typedef NSString * NXCodeTemplateLanguage NS_TYPED_ENUM;
 static NXCodeTemplateLanguage const NXCodeTemplateLanguageSelf = @"Self";       /* For types that are based on it self */
 static NXCodeTemplateLanguage const NXCodeTemplateLanguageObjC = @"ObjC";
 static NXCodeTemplateLanguage const NXCodeTemplateLanguageC = @"C";
+static NXCodeTemplateLanguage const NXCodeTemplateLanguageSwift = @"Swift";
 
 @interface NXCodeTemplate : NSObject
 

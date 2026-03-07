@@ -49,10 +49,20 @@ import UIKit
         
         let createUtility: UIAction = UIAction(title: "Utility", image: UIImage(systemName: "wrench.adjustable.fill")) { [weak self] _ in
             guard let self = self else { return }
+
+        let createSwiftApp: UIAction = UIAction(title: "Swift App", image: UIImage(systemName: "swift")) { [weak self] _ in
+            guard let self = self else { return }
+            self.createProject(mode: NXProjectType(7))
+        }
+
+        let createSwiftUtility: UIAction = UIAction(title: "Swift Utility", image: UIImage(systemName: "swift")) { [weak self] _ in
+            guard let self = self else { return }
+            self.createProject(mode: NXProjectType(8))
+        }
             self.createProject(mode: .utility)
         }
         
-        let createMenu: UIMenu = UIMenu(title: "Create Project", image: UIImage(systemName: "folder.fill"), children: [createApp, createUtility])
+        let createMenu: UIMenu = UIMenu(title: "Create Project", image: UIImage(systemName: "folder.fill"), children: [createApp, createUtility, createSwiftApp, createSwiftUtility])
         
         let importItem: UIAction = UIAction(title: "Import", image: UIImage(systemName: "square.and.arrow.down.fill")) { [weak self] _ in
             guard let self = self else { return }
@@ -198,8 +208,14 @@ import UIKit
         case .app:
             projectString = "App"
             break
+        case 7:
+            projectString = "Swift App"
+            break
         case .utility:
             projectString = "Utility"
+            break
+        case 8:
+            projectString = "Swift Utility"
             break
         default:
             projectString = "Unknown"
@@ -285,7 +301,7 @@ import UIKit
         let sectionProjects = self.projectsList[key] ?? []
         let project: NXProject = sectionProjects[indexPath.row];
         let cell: NXProjectTableCell = self.tableView.dequeueReusableCell(withIdentifier: NXProjectTableCell.reuseIdentifier()) as! NXProjectTableCell
-        cell.configure(withDisplayName: project.projectConfig.displayName, withBundleIdentifier: project.projectConfig.bundleid, withAppIcon: nil, showAppIcon: project.projectConfig.type == NXProjectType.app.rawValue, showBundleID: project.projectConfig.type == NXProjectType.app.rawValue, showArrow: UIDevice.current.userInterfaceIdiom != .pad)
+        cell.configure(withDisplayName: project.projectConfig.displayName, withBundleIdentifier: project.projectConfig.bundleid, withAppIcon: nil, showAppIcon: (project.projectConfig.type == NXProjectType.app.rawValue || project.projectConfig.type == 7), showBundleID: (project.projectConfig.type == NXProjectType.app.rawValue || project.projectConfig.type == 7), showArrow: UIDevice.current.userInterfaceIdiom != .pad)
         return cell
     }
     

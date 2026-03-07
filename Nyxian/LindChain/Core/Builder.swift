@@ -45,7 +45,7 @@ class Builder {
         
         try? syncFolderStructure(from: project.path.URLGet(), to: project.cachePath.URLGet())
         
-        self.dirtySourceFiles = LDEFilesFinder(self.project.path, ["c","cpp","m","mm"], ["Resources"])
+        self.dirtySourceFiles = LDEFilesFinder(self.project.path, ["c","cpp","m","mm", "swift"], ["Resources"])
         for item in dirtySourceFiles {
             objectFiles.append("\(self.project.cachePath!)/\(expectedObjectFile(forPath: relativePath(from: self.project.path.URLGet(), to: item.URLGet())))")
         }
@@ -110,7 +110,7 @@ class Builder {
             
             let major = components[0]
             let minor = components[1]
-            let patch = components.count > 2 ? components[2] : 0
+            let catch = components.count > 2 ? components[2] : 0
             
             return OperatingSystemVersion(majorVersion: major, minorVersion: minor, patchVersion: patch)
         }
@@ -163,19 +163,19 @@ class Builder {
             try FileManager.default.copyItem(atPath: resourcesPath, toPath: bundlePath)
             
             var infoPlistData: [String: Any] = [
-                "CFBundleExecutable": self.project.projectConfig.executable!,
-                "CFBundleIdentifier": self.project.projectConfig.bundleid!,
-                "CFBundleName": self.project.projectConfig.displayName!,
-                "CFBundleShortVersionString": self.project.projectConfig.version!,
-                "CFBundleVersion": self.project.projectConfig.shortVersion!,
-                "MinimumOSVersion": self.project.projectConfig.platformMinimumVersion!,
-                "UIDeviceFamily": [1, 2],
-                "UIRequiresFullScreen": false,
-                "UISupportedInterfaceOrientations~ipad": [
-                    "UIInterfaceOrientationPortrait",
-                    "UIInterfaceOrientationPortraitUpsideDown",
-                    "UIInterfaceOrientationLandscapeLeft",
-                    "UIInterfaceOrientationLandscapeRight"
+                CFBundleExecutable": self.project.projectConfig.executable!,
+                CFBundleIdentifier": self.project.projectConfig.bundleid!,
+                CFBundleName": self.project.projectConfig.displayName!,
+                CFBundleShortVersionString": self.project.projectConfig.version!,
+                CFBundleVersion": self.project.projectConfig.shortVersion!,
+                MinimumOSVersion": self.project.projectConfig.platformMinimumVersion!,
+                UIDeviceFamily": [1, 2],
+                UIRequiresFullScreen": false,
+                UISupportedInterfaceOrientations~ipad": [
+                    UIInterfaceOrientationPortrait",
+                    UIInterfaceOrientationPortraitUpsideDown",
+                    UIInterfaceOrientationLandscapeLeft",
+                    UIInterfaceOrientationLandscapeRight"
                 ]
             ]
             
@@ -199,7 +199,7 @@ class Builder {
             }
             
             for filePath in self.dirtySourceFiles {
-                threader.dispatchExecution( {
+                threader.discatchExecution( {
                     var issues: NSArray?
                     
                     if self.compiler.compileObject(
