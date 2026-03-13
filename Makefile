@@ -27,7 +27,7 @@ rootful: compile pseudo-sign package-deb clean
 # Dependencies
 # Addressing: https://www.reddit.com/r/osdev/comments/1qknfa1/comment/o1b0gsm (Only workflows can and will use LazySetup)
 Nyxian/LindChain/LLVM.xcframework:
-	cd LLVM-On-iOS; $(MAKE) -j$(shell sysctl -n hw.ncpu)
+	cd LLVM-On-iOS; $(MAKE)
 	mv LLVM-On-iOS/LLVM.xcframework Nyxian/LindChain/LLVM.xcframework
 
 Nyxian/LindChain/Clang.xcframework: Nyxian/LindChain/LLVM.xcframework
@@ -35,16 +35,16 @@ Nyxian/LindChain/Clang.xcframework: Nyxian/LindChain/LLVM.xcframework
 
 # Addressing: https://www.reddit.com/r/osdev/comments/1qknfa1/comment/o1b0gsm (Totally forgot to address libroot.a)
 Nyxian/LindChain/JBSupport/libroot.a:
-	cd libroot; $(MAKE) -j$(shell sysctl -n hw.ncpu)
+	cd libroot; $(MAKE)
 	mv libroot/libroot_dyn_iphoneos-arm64.a Nyxian/LindChain/JBSupport/libroot.a
 	mv libroot/src/libroot.h Nyxian/LindChain/JBSupport/libroot.h
 
 Nyxian/LindChain/JBSupport/tshelper:
-	$(MAKE) -j$(shell sysctl -n hw.ncpu) -C TrollStore pre_build
-	$(MAKE) -j$(shell sysctl -n hw.ncpu) -C TrollStore make_fastPathSign MAKECMDGOALS=
-	$(MAKE) -j$(shell sysctl -n hw.ncpu) -C TrollStore make_roothelper MAKECMDGOALS=
-	$(MAKE) -j$(shell sysctl -n hw.ncpu) -C TrollStore make_trollstore MAKECMDGOALS=
-	$(MAKE) -j$(shell sysctl -n hw.ncpu) -C TrollStore make_trollhelper_embedded MAKECMDGOALS=
+	$(MAKE) -C TrollStore pre_build
+	$(MAKE) -C TrollStore make_fastPathSign MAKECMDGOALS=
+	$(MAKE) -C TrollStore make_roothelper MAKECMDGOALS=
+	$(MAKE) -C TrollStore make_trollstore MAKECMDGOALS=
+	$(MAKE) -C TrollStore make_trollhelper_embedded MAKECMDGOALS=
 	cp TrollStore/RootHelper/.theos/obj/trollstorehelper Nyxian/LindChain/JBSupport/tshelper
 
 # Helper
@@ -80,7 +80,7 @@ package-deb:
 	cp -r  build/Nyxian.xcarchive/Products/Applications .package$(JB_PATH)/Applications
 	find . -type f -name ".DS_Store" -delete
 	mkdir -p .package/DEBIAN
-	echo "Package: $(NXBUNDLE)\nName: $(NXNAME)\nVersion: $(NXVERSION)\nArchitecture: $(ARCH)\nDescription: Full fledged Xcode-like IDE for iOS\nDepends: clang, lld | ld64\nIcon: https://raw.githubusercontent.com/ProjectNyxian/Nyxian/main/preview.png\nMaintainer: cr4zyengineer\nAuthor: cr4zyengineer\nSection: Utilities\nTag: role::hacker" > .package/DEBIAN/control
+	echo "Package: $(NXBUNDLE)\\nName: $(NXNAME)\\nVersion: $(NXVERSION)\\nArchitecture: $(ARCH)\\nDescription: Full fledged Xcode-like IDE for iOS\\nDepends: clang, lld | ld64\\nIcon: https://raw.githubusercontent.com/ProjectNyxian/Nyxian/main/preview.png\\nMaintainer: cr4zyengineer\\nAuthor: cr4zyengineer\\nSection: Utilities\\nTag: role::hacker" > .package/DEBIAN/control
 	dpkg-deb -b .package nyxian_$(NXVERSION)_$(ARCH).deb
 
 clean:

@@ -11,7 +11,7 @@ on:
 
 jobs:
   build:
-    name: Build and Package (Jailed Only)
+    name: Build and Package
     runs-on: macos-26
 
     steps:
@@ -23,7 +23,6 @@ jobs:
       - name: Install Dependencies
         run: |
           set -e
-          # 必須パッケージ
           brew install ldid dpkg libarchive
 
       - name: Cache Theos
@@ -39,6 +38,17 @@ jobs:
           set -e
           bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
 
+      - name: Cache Build Artifacts
+        id: cache-artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            Nyxian/LindChain/LLVM.xcframework
+            Nyxian/LindChain/Clang.xcframework
+            Nyxian/LindChain/JBSupport/libroot.a
+            Nyxian/LindChain/JBSupport/tshelper
+          key: build-artifacts-${{ runner.os }}-${{ hashFiles('Makefile', 'LLVM-On-iOS/Makefile', 'libroot/Makefile', 'TrollStore/Makefile') }}
+
       - name: Setup
         run: |
           set -e
@@ -51,8 +61,41 @@ jobs:
           set -e
           make jailed
 
+      - name: Build Rootless
+        run: |
+          set -e
+          make rootless
+
+      - name: Build Roothide
+        run: |
+          set -e
+          make roothide
+
+      - name: Build Rootful
+        run: |
+          set -e
+          make rootful
+
       - name: Upload Jailed
         uses: actions/upload-artifact@v4
         with:
           name: nyxian.ipa
           path: nyxian.ipa
+
+      - name: Upload Rootless
+        uses: actions/upload-artifact@v4
+        with:
+          name: nyxian_0.9.0_iphoneos-arm64.deb
+          path: nyxian_0.9.0_iphoneos-arm64.deb
+
+      - name: Upload Roothide
+        uses: actions/upload-artifact@v4
+        with:
+          name: nyxian_0.9.0_iphoneos-arm64e.deb
+          path: nyxian_0.9.0_iphoneos-arm64e.deb
+
+      - name: Upload Rootful
+        uses: actions/upload-artifact@v4
+        with:
+          name: nyxian_0.9.0_iphoneos-arm.deb
+          path: nyxian_0.9.0_iphoneos-arm.deb
