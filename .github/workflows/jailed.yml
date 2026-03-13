@@ -1,0 +1,51 @@
+name: Build Jailed
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Jailed
+    runs-on: macos-26
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Dependencies
+        run: |
+          set -e
+          brew install ldid dpkg libarchive
+
+      - name: Cache Theos
+        id: cache-theos
+        uses: actions/cache@v4
+        with:
+          path: ~/theos
+          key: theos-${{ runner.os }}-v1
+
+      - name: Install Theos
+        if: steps.cache-theos.outputs.cache-hit != 'true'
+        run: |
+          set -e
+          bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
+
+      - name: Setup
+        run: |
+          set -e
+          echo "THEOS=~/theos" >> $GITHUB_ENV
+          echo "PATH=$HOME/theos/bin:$PATH" >> $GITHUB_ENV
+
+      - name: Build Jailed
+        timeout-minutes: 1200
+        run: |
+          set -e
+          make jailed
+
+      - name: Upload Jailed
+        uses: actions/upload-artifact@v4
+        with:
+          name: nyxian.ipa
+          path: nyxian.ipa
