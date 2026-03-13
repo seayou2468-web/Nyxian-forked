@@ -17,7 +17,7 @@ jobs:
       - name: Install Dependencies
         run: |
           set -e
-          brew install ldid dpkg libarchive
+          brew install ldid dpkg libarchive cmake ninja
 
       - name: Cache Theos
         id: cache-theos
@@ -60,6 +60,9 @@ jobs:
         run: |
           set -e
           make jailed
+          mkdir build_cmake && cd build_cmake
+          cmake -G Ninja ..
+          ninja
 
       - name: Upload Jailed
         uses: actions/upload-artifact@v4
