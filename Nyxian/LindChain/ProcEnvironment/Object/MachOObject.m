@@ -59,8 +59,8 @@
     
     /* run signer~~ UwU */
     dispatch_semaphore_t sema = dispatch_semaphore_create(0);
-    [LCUtils signAppBundleWithZSign:[NSURL fileURLWithPath:bundlePath] completionHandler:^(BOOL succeeded, NSError *error){
-        error = error;
+    [LCUtils signAppBundleWithZSign:[NSURL fileURLWithPath:bundlePath] completionHandler:^(BOOL succeeded, NSError *handlerError){
+        error = handlerError;
         dispatch_semaphore_signal(sema);
     }];
     dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
@@ -112,8 +112,8 @@
     
     /* run signer~~ UwU */
     dispatch_semaphore_t sema = dispatch_semaphore_create(0);
-    [LCUtils signAppBundleWithZSign:[NSURL fileURLWithPath:bundlePath] completionHandler:^(BOOL succeeded, NSError *error){
-        error = error;
+    [LCUtils signAppBundleWithZSign:[NSURL fileURLWithPath:bundlePath] completionHandler:^(BOOL succeeded, NSError *handlerError){
+        error = handlerError;
         dispatch_semaphore_signal(sema);
     }];
     dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);

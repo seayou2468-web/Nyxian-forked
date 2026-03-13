@@ -75,6 +75,18 @@ int sysctl_handle_int64(sysctl_req_t *req, int64_t val) {
 
 /* --- Sysctl Functions --- */
 
+int sysctl_kern_maxfiles(sysctl_req_t *req) { return sysctl_handle_int(req, 12288); }
+int sysctl_kern_maxfilesperproc(sysctl_req_t *req) { return sysctl_handle_int(req, 10240); }
+int sysctl_hw_cpu_type(sysctl_req_t *req) { return sysctl_handle_int(req, 0x0100000c); } // CPU_TYPE_ARM64
+int sysctl_hw_cpu_subtype(sysctl_req_t *req) { return sysctl_handle_int(req, 2); } // CPU_SUBTYPE_ARM64_V8
+
+
+int sysctl_hw_cpufamily(sysctl_req_t *req) { return sysctl_handle_int(req, 0x12345678); } // Apple Silicon generic
+int sysctl_hw_vectorunit(sysctl_req_t *req) { return sysctl_handle_int(req, 1); }
+int sysctl_hw_optional_floatingpoint(sysctl_req_t *req) { return sysctl_handle_int(req, 1); }
+int sysctl_kern_bootargs(sysctl_req_t *req) { return sysctl_handle_string(req, "rootdev=/dev/disk0s1"); }
+
+
 int sysctl_kernmaxproc(sysctl_req_t *req) { return sysctl_handle_int(req, 1000); }
 
 int sysctl_kernproc(sysctl_req_t *req)
@@ -154,7 +166,7 @@ int sysctl_hw_ncpu(sysctl_req_t *req) { return sysctl_handle_int(req, (int)[[NSP
 int sysctl_hw_pagesize(sysctl_req_t *req) { return sysctl_handle_int(req, (int)getpagesize()); }
 int sysctl_hw_memsize(sysctl_req_t *req) { return sysctl_handle_int64(req, (int64_t)[[NSProcessInfo processInfo] physicalMemory]); }
 int sysctl_hw_machine(sysctl_req_t *req) { return sysctl_handle_string(req, "arm64"); }
-int sysctl_hw_model(sysctl_req_t *req) { return sysctl_handle_string(req, "iPhone14,5"); }
+int sysctl_hw_model(sysctl_req_t *req) { return sysctl_handle_string(req, "iPhone18,3"); }
 int sysctl_hw_cpufreq(sysctl_req_t *req) { return sysctl_handle_int64(req, 3200000000LL); }
 int sysctl_hw_busfreq(sysctl_req_t *req) { return sysctl_handle_int64(req, 1000000000LL); }
 int sysctl_hw_tbfreq(sysctl_req_t *req) { return sysctl_handle_int64(req, 24000000LL); }
@@ -170,11 +182,17 @@ int sysctl_kern_version(sysctl_req_t *req) { return sysctl_handle_string(req, "D
 int sysctl_kern_osvariant_status(sysctl_req_t *req) { return sysctl_handle_int64(req, 0); }
 int sysctl_kern_ngroups(sysctl_req_t *req) { return sysctl_handle_int(req, 16); }
 int sysctl_kern_saved_ids(sysctl_req_t *req) { return sysctl_handle_int(req, 1); }
-int sysctl_kern_boottime(sysctl_req_t *req) { struct timeval tv = { .tv_sec = 1700000000, .tv_usec = 0 }; return sysctl_handle_string(req, (const char *)&tv); } /* Needs better handle for struct */
+int sysctl_kern_boottime(sysctl_req_t *req) { struct timeval tv = { .tv_sec = 1700000000, .tv_usec = 0 }; size_t len = sizeof(struct timeval); if (req->oldlenp) { if (req->oldp) { size_t oldlen = 0; if (!mach_syscall_copy_in(req->task, sizeof(size_t), &oldlen, req->oldlenp)) return -1; if (oldlen < len) { req->err = ENOMEM; return -1; } if (!mach_syscall_copy_out(req->task, len, &tv, req->oldp)) return -1; } if (!mach_syscall_copy_out(req->task, sizeof(size_t), &len, req->oldlenp)) return -1; } return 0; } /* Needs better handle for struct */
 
 /* --- Map Definitions --- */
 
 static const sysctl_map_entry_t sysctl_map[] = {
+    { { CTL_KERN, KERN_MAXFILES                }, 2, sysctl_kern_maxfiles },
+    { { CTL_KERN, KERN_MAXFILESPERPROC         }, 2, sysctl_kern_maxfilesperproc },
+    { { CTL_KERN, KERN_BOOTARGS               }, 2, sysctl_kern_bootargs },
+    { { CTL_HW,   HW_CPU_FAMILY               }, 2, sysctl_hw_cpufamily },
+    { { CTL_HW,   HW_VECTORUNIT               }, 2, sysctl_hw_vectorunit },
+    { { CTL_HW,   HW_OPTIONAL, 1 /* floatingpoint */ }, 3, sysctl_hw_optional_floatingpoint },
     { { CTL_KERN, KERN_HOSTNAME                 }, 2, sysctl_kernhostname },
     { { CTL_KERN, KERN_MAXPROC                  }, 2, sysctl_kernmaxproc },
     { { CTL_KERN, KERN_PROC, KERN_PROC_ALL      }, 3, sysctl_kernproc },
@@ -203,6 +221,14 @@ static const sysctl_map_entry_t sysctl_map[] = {
 };
 
 static const sysctl_name_map_entry_t sysctl_name_map[] = {
+    { "kern.maxfiles",          { CTL_KERN, KERN_MAXFILES                }, 2 },
+    { "kern.maxfilesperproc",   { CTL_KERN, KERN_MAXFILESPERPROC         }, 2 },
+    { "hw.cputype",             { CTL_HW,   HW_CPU_TYPE                  }, 2 },
+    { "hw.cpusubtype",          { CTL_HW,   HW_CPU_SUBTYPE               }, 2 },
+    { "kern.bootargs",          { CTL_KERN, KERN_BOOTARGS                }, 2 },
+    { "hw.cpufamily",           { CTL_HW,   HW_CPU_FAMILY                }, 2 },
+    { "hw.vectorunit",          { CTL_HW,   HW_VECTORUNIT                }, 2 },
+    { "hw.optional.floatingpoint", { CTL_HW, HW_OPTIONAL, 1              }, 3 },
     { "kern.hostname",          { CTL_KERN, KERN_HOSTNAME                }, 2 },
     { "kern.maxproc",           { CTL_KERN, KERN_MAXPROC                 }, 2 },
     { "kern.proc.all",          { CTL_KERN, KERN_PROC, KERN_PROC_ALL     }, 3 },

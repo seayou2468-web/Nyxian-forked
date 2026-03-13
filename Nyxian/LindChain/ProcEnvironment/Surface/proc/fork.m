@@ -298,17 +298,17 @@ ksurface_return_t proc_exit(ksurface_proc_t *proc)
     pid_t pid = proc_getpid(proc);
     
     /* TODO: Completely move to tree-based system, which is possible now */
-    proc_remove_by_pid(pid);  /* remove from global table */
-    
-    /* release our working reference */
-    kvo_release(proc);
-    
     /* terminate process */
     LDEProcess *process = [[LDEProcessManager shared].processes objectForKey:@(pid)];
     if(process != NULL)
     {
         [process terminate];
     }
+
+    proc_remove_by_pid(pid);  /* remove from global table */
+
+    /* release our working reference */
+    kvo_release(proc);
     
     return SURFACE_SUCCESS;
 }

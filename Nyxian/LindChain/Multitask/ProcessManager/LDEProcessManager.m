@@ -170,9 +170,9 @@
     }
     
     LDEApplicationObject *applicationObject = [[LDEApplicationWorkspace shared] applicationObjectForBundleID:bundleIdentifier];
-    if(!applicationObject.isLaunchAllowed)
+    if(!applicationObject || !applicationObject.isLaunchAllowed)
     {
-        [NotificationServer NotifyUserWithLevel:NotifLevelError notification:[NSString stringWithFormat:@"\"%@\" Is No Longer Available", applicationObject.displayName] delay:0.0];
+        [NotificationServer NotifyUserWithLevel:NotifLevelError notification:[NSString stringWithFormat:@"\"%@\" Is No Longer Available", applicationObject ? applicationObject.displayName : bundleIdentifier] delay:0.0];
         os_unfair_lock_unlock(&processes_array_lock);
         return -1;
     }

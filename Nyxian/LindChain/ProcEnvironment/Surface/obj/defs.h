@@ -99,6 +99,7 @@ struct kvevent {
     kvobject_t *owner;                              /* pointer of who owns the event */
     kvobject_event_handler_t handler;               /* pointer to handler */
     void *ctx;                                      /* pointer to payload MARK: if heap allocated, deallocate it on unregistration */
+    bool unregistered;
 };
 
 struct kvobject {

@@ -124,15 +124,20 @@ void *radix_remove(radix_tree_t *tree,
                 break;
             }
         }
-        if(all_null && level > 0)
-        {
-            free(path[level]);
+
+    if(all_null)
+    {
+        free(path[level]);
+        if(level > 0)
             path[level - 1]->slots[chunks[level - 1]] = NULL;
-        }
         else
-        {
-            break;
-        }
+            tree->root = NULL;
+    }
+    else
+    {
+        break;
+    }
+
     }
     
     return old;
@@ -156,15 +161,15 @@ static void radix_walk_node(radix_node_t *node,
             continue;
         }
         
-        uint64_t ident = ident_prefix | (i << ((RADIX_LEVELS - 1 - level) * RADIX_BITS));
+        uint64_t ident = ident_prefix | ((uint64_t)i << ((RADIX_LEVELS - 1 - level) * RADIX_BITS));
         
         if(level == RADIX_LEVELS - 1)
         {
-            callback(ident_prefix, node->slots[i], ctx);
+            callback(ident, node->slots[i], ctx);
         }
         else
         {
-            radix_walk_node((radix_node_t *)node->slots[i], level + 1, ident_prefix, callback, ctx);
+            radix_walk_node((radix_node_t *)node->slots[i], level + 1, ident, callback, ctx);
         }
     }
 }

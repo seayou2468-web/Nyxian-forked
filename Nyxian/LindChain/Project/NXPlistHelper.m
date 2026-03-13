@@ -41,7 +41,7 @@
     {
         _lock = OS_UNFAIR_LOCK_INIT;
         _plistPath = plistPath;
-        _savedHash = [self currentHash];
+        _savedHash = [self currentHash] ?: @"";
         _variables = variables;
         [self reloadData];
     }
@@ -152,7 +152,6 @@
     }
     
     return result;
-    return NULL;
 }
 
 - (id _Nonnull)expandObject:(id _Nonnull)obj

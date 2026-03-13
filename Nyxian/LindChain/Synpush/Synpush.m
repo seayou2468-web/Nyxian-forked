@@ -220,7 +220,7 @@ static BOOL isHeaderFile(const char *path)
         item.line    = line;
         item.column  = col;
         item.type    = mapSeverity(severity);
-        item.message = [NSString stringWithFormat:@"%s", cmsg ?: "Unknown"];
+        item.message = cmsg ? [NSString stringWithUTF8String:cmsg] : @"Unknown";
         [items addObject:item];
 
         clang_disposeString(diagStr);
@@ -289,7 +289,7 @@ static BOOL isHeaderFile(const char *path)
     _args = (char**)calloc((size_t)_argc, sizeof(char*));
     for(int i = 0; i < _argc; ++i)
     {
-        _args[i] = strdup([args[i] UTF8String]);
+        const char *utf8 = [args[i] UTF8String]; _args[i] = utf8 ? strdup(utf8) : strdup("");
     }
     
     /* making sure that bytes doesnt get deallocated randomly */

@@ -33,7 +33,7 @@ NSArray<NSString*> *LDEFilesFinder(NSString *searchPath,
     
     for(NSString *relativePath in subPaths)
     {
-        NSString *fullPath = [searchPath stringByAppendingFormat:@"/%@", relativePath];
+        NSString *fullPath = [searchPath stringByAppendingPathComponent:relativePath];
         
         BOOL isDir = NO;
         if([[NSFileManager defaultManager] fileExistsAtPath:fullPath isDirectory:&isDir] &&

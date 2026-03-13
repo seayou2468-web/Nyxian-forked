@@ -56,98 +56,84 @@ int LDEGetUserSetThreadCount(void)
 {
     NSNumber *value = [[NSUserDefaults standardUserDefaults] objectForKey:@"cputhreads"];
     int userSelected = (value && [value isKindOfClass:[NSNumber class]]) ? value.intValue : LDEGetOptimalThreadCount();
-    return (userSelected == 0) ? 1 : userSelected;
+    return (userSelected <= 0) ? 1 : userSelected;
 }
+
+@interface LDEThreadTask : NSObject
+@property (nonatomic, copy) void (^block)(void);
+@property (nonatomic, copy) void (^completion)(void);
+@end
+
+@implementation LDEThreadTask
+@end
+
+@interface LDEThreadController () {
+    pthread_mutex_t _mutex;
+    pthread_cond_t _cond;
+    NSMutableArray<LDEThreadTask *> *_queue;
+    pthread_t *_threads_ptr;
+    int _workerCount;
+    _Atomic(bool) _shouldExit;
+}
+@end
 
 static void *LDEWorkerThreadMain(void *arg)
 {
-    /* getting thread worker */
-    LDEWorkerThread *worker = (LDEWorkerThread *)arg;
+    LDEThreadController *controller = (__bridge LDEThreadController *)arg;
     
-    /* pin current thread to a certain groups of CPUs */
-    thread_affinity_policy_data_t policy = { .affinity_tag = worker->cpuIndex + 1 };
-    thread_policy_set(pthread_mach_thread_np(pthread_self()), THREAD_AFFINITY_POLICY, (thread_policy_t)&policy, THREAD_AFFINITY_POLICY_COUNT);
-    
-    /* execution flow loop, gives me mach syscall server vibes ^^ */
-    while(!atomic_load(&worker->shouldExit))
+    while(1)
     {
-        pthread_mutex_lock(&worker->mutex);
+        LDEThreadTask *task = nil;
+
+        pthread_mutex_lock(&controller->_mutex);
         
-        /* waiting on work */
-        while(!atomic_load(&worker->hasWork) && !atomic_load(&worker->shouldExit))
+        while(controller->_queue.count == 0 && !atomic_load(&controller->_shouldExit))
         {
-            pthread_cond_wait(&worker->cond, &worker->mutex);
+            pthread_cond_wait(&controller->_cond, &controller->_mutex);
         }
         
-        /* checking if we shall exit */
-        if(atomic_load(&worker->shouldExit))
+        if(atomic_load(&controller->_shouldExit) && controller->_queue.count == 0)
         {
-            pthread_mutex_unlock(&worker->mutex);
+            pthread_mutex_unlock(&controller->_mutex);
             break;
         }
         
-        /* setting blocks up  */
-        void (^code)(void) = worker->currentBlock;
-        void (^completion)(void) = worker->completionBlock;
-        dispatch_semaphore_t sem = worker->semaphore;
-        
-        /* clear worker references to allow ARC to release captured objects */
-        worker->currentBlock = nil;
-        worker->completionBlock = nil;
-        worker->semaphore = nil;
-        
-        /* storing that we are working on API request rawrrr x3 */
-        atomic_store(&worker->hasWork, false);
-        
-        pthread_mutex_unlock(&worker->mutex);
-        
-        /* checking if there is code to execute */
-        if(code)
+        if(controller->_queue.count > 0)
         {
-            code();
+            task = controller->_queue.firstObject;
+            [controller->_queue removeObjectAtIndex:0];
         }
-        if(completion)
+
+        pthread_mutex_unlock(&controller->_mutex);
+
+        if(task)
         {
-            completion();
-        }
-        if(sem)
-        {
-            /* signaling semaphore ofc */
-            dispatch_semaphore_signal(sem);
+            if(task.block) task.block();
+            if(task.completion) task.completion();
         }
     }
     
     return NULL;
 }
 
-@interface LDEThreadController ()
-
-@property (nonatomic, strong, readonly) dispatch_semaphore_t semaphore;
-@property (nonatomic, readonly) int threads;
-@property (nonatomic, assign) LDEWorkerThread *workers;
-@property (nonatomic, assign) int workerCount;
-@property (nonatomic, assign) _Atomic(int) nextWorker;
-
-@end
-
 @implementation LDEThreadController
 
 - (instancetype)initWithThreads:(uint32_t)threads
 {
     self = [super init];
-    _threads = (threads == 0) ? 1 : threads;
-    _semaphore = dispatch_semaphore_create(threads);
-    _workerCount = threads;
-    _workers = calloc(threads, sizeof(LDEWorkerThread));
-    atomic_init(&_nextWorker, 0);
-    for(int i = 0; i < threads; i++)
+    if(self)
     {
-        _workers[i].cpuIndex = i % LDEGetOptimalThreadCount();
-        _workers[i].shouldExit = false;
-        _workers[i].hasWork = false;
-        pthread_mutex_init(&_workers[i].mutex, NULL);
-        pthread_cond_init(&_workers[i].cond, NULL);
-        pthread_create(&_workers[i].thread, NULL, LDEWorkerThreadMain, &_workers[i]);
+        _workerCount = (threads == 0) ? 1 : threads;
+        _queue = [[NSMutableArray alloc] init];
+        pthread_mutex_init(&_mutex, NULL);
+        pthread_cond_init(&_cond, NULL);
+        atomic_init(&_shouldExit, false);
+
+        _threads_ptr = calloc(_workerCount, sizeof(pthread_t));
+        for(int i = 0; i < _workerCount; i++)
+        {
+            pthread_create(&_threads_ptr[i], NULL, LDEWorkerThreadMain, (__bridge void *)self);
+        }
     }
     return self;
 }
@@ -165,50 +151,37 @@ static void *LDEWorkerThreadMain(void *arg)
 - (void)dispatchExecution:(void (^)(void))code
            withCompletion:(void (^)(void))completion
 {
-    if(code == NULL ||
-       _lockdown)
+    if(code == NULL || _lockdown)
     {
         if(completion) completion();
         return;
     }
     
-    dispatch_semaphore_wait(self.semaphore, DISPATCH_TIME_FOREVER);
+    LDEThreadTask *task = [[LDEThreadTask alloc] init];
+    task.block = code;
+    task.completion = completion;
     
-    if(_lockdown)
-    {
-        if(completion) completion();
-        dispatch_semaphore_signal(self.semaphore);
-        return;
-    }
-    
-    unsigned int next = (unsigned int)atomic_fetch_add(&_nextWorker, 1);
-    int workerIndex = next % _workerCount;
-    LDEWorkerThread *worker = &_workers[workerIndex];
-    pthread_mutex_lock(&worker->mutex);
-    worker->currentBlock = code;
-    worker->completionBlock = completion;
-    worker->semaphore = self.semaphore;
-    atomic_store(&worker->hasWork, true);
-    pthread_cond_signal(&worker->cond);
-    pthread_mutex_unlock(&worker->mutex);
+    pthread_mutex_lock(&_mutex);
+    [_queue addObject:task];
+    pthread_cond_signal(&_cond);
+    pthread_mutex_unlock(&_mutex);
 }
 
 - (void)dealloc
 {
+    atomic_store(&_shouldExit, true);
+    pthread_mutex_lock(&_mutex);
+    pthread_cond_broadcast(&_cond);
+    pthread_mutex_unlock(&_mutex);
+
     for(int i = 0; i < _workerCount; i++)
     {
-        pthread_mutex_lock(&_workers[i].mutex);
-        atomic_store(&_workers[i].shouldExit, true);
-        pthread_cond_signal(&_workers[i].cond);
-        pthread_mutex_unlock(&_workers[i].mutex);
+        pthread_join(_threads_ptr[i], NULL);
     }
-    for(int i = 0; i < _workerCount; i++)
-    {
-        pthread_join(_workers[i].thread, NULL);
-        pthread_mutex_destroy(&_workers[i].mutex);
-        pthread_cond_destroy(&_workers[i].cond);
-    }
-    free(_workers);
+
+    free(_threads_ptr);
+    pthread_mutex_destroy(&_mutex);
+    pthread_cond_destroy(&_cond);
 }
 
 @end

@@ -58,6 +58,7 @@ kvobject_strong_t *kvobject_alloc(kvobject_main_event_handler_t handler)
     kvo->state = kvObjStateNormal;
     kvo->orig = NULL;
     pthread_rwlock_init(&(kvo->rwlock), NULL);  /* initilizing the lock lol */
+    pthread_rwlock_init(&(kvo->event_rwlock), NULL); /* initilizing the other lock lol */
     
     /* setting handlers and running init straight */
     kvo->main_handler = handler;
@@ -67,6 +68,7 @@ kvobject_strong_t *kvobject_alloc(kvobject_main_event_handler_t handler)
        kvo->main_handler(&kvo, kvObjEventInit) != 0)
     {
         pthread_rwlock_destroy(&(kvo->rwlock));
+        pthread_rwlock_destroy(&(kvo->event_rwlock));
         free(kvo);
         return NULL;
     }

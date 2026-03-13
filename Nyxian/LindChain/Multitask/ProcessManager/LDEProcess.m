@@ -205,7 +205,7 @@
                 {
                     // Initilize once
                     dispatch_once(&innerSelf->_addOnce, ^{
-                        dispatch_sync(dispatch_get_main_queue(), ^{
+                        dispatch_async(dispatch_get_main_queue(), ^{
                             __strong typeof(weakSelf) innerSelf = weakSelf;
                             if(innerSelf == nil) return;
                             
@@ -260,7 +260,10 @@
                             clientSettings.statusBarStyle = 0;
                             parameters.clientSettings = clientSettings;
                             
-                            innerSelf.scene = [[PrivClass(FBSceneManager) sharedInstance] createSceneWithDefinition:definition initialParameters:parameters];
+                            if (innerSelf.processHandle && innerSelf.processHandle.identity) {
+                                innerSelf.scene = [[PrivClass(FBSceneManager) sharedInstance] createSceneWithDefinition:definition initialParameters:parameters];
+                                innerSelf.scene.delegate = innerSelf;
+                            }
                             innerSelf.scene.delegate = innerSelf;
                         });
                     });

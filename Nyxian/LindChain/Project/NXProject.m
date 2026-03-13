@@ -441,7 +441,7 @@
     if(error) return projectList;
     for(NSString *entry in pathEntries)
     {
-        NXProject *project = [[NXProject alloc] initWithPath:[NSString stringWithFormat:@"%@/%@",path,entry]];
+        NXProject *project = [[NXProject alloc] initWithPath:[path stringByAppendingPathComponent:entry]];
         
         if(project.projectConfig.type == NXProjectTypeApp)
         {
