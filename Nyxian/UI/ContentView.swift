@@ -350,25 +350,41 @@ import UIKit
         }
     }
     
+
+
+
     func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
         do {
             guard let selectedURL = urls.first else { return }
             
-            let extractFirst: URL = URL(fileURLWithPath: "\(NSTemporaryDirectory())Proj")
-            try FileManager.default.createDirectory(at: extractFirst, withIntermediateDirectories: true)
-            unzipArchiveAtPath(selectedURL.path, extractFirst.path)
-            let items: [String] = try FileManager.default.contentsOfDirectory(atPath: "\(NSTemporaryDirectory())Proj")
-            let projectPath: String = "\(Bootstrap.shared.bootstrapPath("/Projects"))/\(UUID().uuidString)"
-            try FileManager.default.moveItem(atPath: extractFirst.appendingPathComponent(items.first ?? "").path, toPath: projectPath)
-            try FileManager.default.removeItem(at: extractFirst)
-            
-            if let project = NXProject(path: projectPath) {
-                addProject(project)
+            let extractFirst = URL(fileURLWithPath: "\(NSTemporaryDirectory())Proj")
+            if FileManager.default.fileExists(atPath: extractFirst.path) {
+                try? FileManager.default.removeItem(at: extractFirst)
             }
+            try FileManager.default.createDirectory(at: extractFirst, withIntermediateDirectories: true)
+            
+            if unzipArchiveAtPath(selectedURL.path, extractFirst.path) {
+                let items = try FileManager.default.contentsOfDirectory(atPath: extractFirst.path)
+                if let firstItem = items.first {
+                    let projectPath = "\(Bootstrap.shared.bootstrapPath("/Projects"))/\(UUID().uuidString)"
+                    try FileManager.default.moveItem(atPath: extractFirst.appendingPathComponent(firstItem).path, toPath: projectPath)
+
+                    if let project = NXProject(path: projectPath) {
+                        addProject(project)
+                    }
+                }
+            } else {
+                throw NSError(domain: "com.cr4zy.nyxian", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to unzip project archive"])
+            }
+
+            try? FileManager.default.removeItem(at: extractFirst)
         } catch {
             NotificationServer.NotifyUser(level: .error, notification: error.localizedDescription)
         }
     }
+
+
+
     
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         let keys = Array(self.projectsList.keys).sorted()

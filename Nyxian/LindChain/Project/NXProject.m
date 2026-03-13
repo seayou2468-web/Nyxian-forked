@@ -250,7 +250,7 @@
         [directoryList addObject:@"/Resources"];
     }
     for(NSString *directory in directoryList)
-        [defaultFileManager createDirectoryAtPath:[NSString stringWithFormat:@"%@%@", projectPath, directory] withIntermediateDirectories:NO attributes:NULL error:nil];
+        [defaultFileManager createDirectoryAtPath:[NSString stringWithFormat:@"%@%@", projectPath, directory] withIntermediateDirectories:YES attributes:NULL error:nil];
     
     NSDictionary *plistList = nil;
     

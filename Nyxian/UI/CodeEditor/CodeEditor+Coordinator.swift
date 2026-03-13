@@ -52,13 +52,33 @@ class Coordinator: NSObject, TextViewDelegate {
         }
     }
     
+    @objc
     @objc func typecheckCode() {
+        guard let textView = self.parent?.textView else { return }
+        let text = textView.text
         self.isProcessing = true
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self = self else { return }
             guard let parent = self.parent else { return }
             guard let server = parent.synpushServer else { return }
             
+            parent.project?.projectConfig.reloadIfNeeded()
+            let flags: [String] = parent.isReadOnly ? NXProjectConfig.sdkCompilerFlags() as! [String] : (parent.project?.projectConfig.compilerFlags as? [String] ?? [])
+
+            server.reparseFile(text, withArgs: flags)
+            self.diag = server.getDiagnostics()
+
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                self.isProcessing = false
+                self.updateDiag()
+            }
+        }
+    }
+
+            guard let parent = self.parent else { return }
+            guard let server = parent.synpushServer else { return }
+
             parent.project?.projectConfig.reloadIfNeeded()
             let flags: [String] = parent.isReadOnly ? NXProjectConfig.sdkCompilerFlags() as! [String] : parent.project?.projectConfig.compilerFlags as! [String]
             
@@ -68,26 +88,29 @@ class Coordinator: NSObject, TextViewDelegate {
         }
     }
     
+
     func textViewDidChange(_ textView: TextView) {
         guard self.parent?.synpushServer != nil else { return }
+
         if !self.isInvalidated {
             self.isInvalidated = true
-            for item in self.entries {
+            self.entriesLock.lock()
+            let currentEntries = self.entries
+            self.entriesLock.unlock()
+
+            for item in currentEntries {
                 UIView.animate(withDuration: 0.3) {
-                    item.value.1!.backgroundColor = UIColor.systemGray.withAlphaComponent(0.3)
-                    item.value.0!.backgroundColor = UIColor.systemGray.withAlphaComponent(1.0)
-                    item.value.0!.isUserInteractionEnabled = false
-                    item.value.0!.errorview?.alpha = 0.0
+                    item.value.1?.backgroundColor = UIColor.systemGray.withAlphaComponent(0.3)
+                    item.value.0?.backgroundColor = UIColor.systemGray.withAlphaComponent(1.0)
+                    item.value.0?.isUserInteractionEnabled = false
+                    item.value.0?.errorview?.alpha = 0.0
                 } completion: { _ in
-                    item.value.0!.errorview?.removeFromSuperview()
+                    item.value.0?.errorview?.removeFromSuperview()
                 }
             }
         }
         
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            guard let self = self else { return }
-            self.redrawDiag()
-        }
+        self.redrawDiag()
         
         if self.isProcessing {
             self.needsAnotherProcess = true
@@ -96,6 +119,7 @@ class Coordinator: NSObject, TextViewDelegate {
         
         self.debounce?.debounce()
     }
+
     
     var isAutoIndenting = false
     

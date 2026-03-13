@@ -236,6 +236,12 @@ static void* syscall_worker_thread(void *ctx)
         /* checking if the handler was set by the kernel virtualisation layer */
         if(!handler)
         {
+            pid_t xnu_pid_err = 0;
+            mach_msg_audit_trailer_t *trailer = (mach_msg_audit_trailer_t *)((uint8_t *)&(buffer->header) + buffer->header.msgh_size);
+            if (trailer->msgh_trailer_type == MACH_MSG_TRAILER_FORMAT_0 && trailer->msgh_trailer_size >= sizeof(mach_msg_audit_trailer_t)) {
+                xnu_pid_err = (pid_t)trailer->msgh_audit.val[5];
+            }
+            klog_log(@"syscall:server", @"unimplemented syscall %d from pid %d", req->syscall_num, xnu_pid_err);
             err = ENOSYS;
             result = -1;
             goto cleanup;
