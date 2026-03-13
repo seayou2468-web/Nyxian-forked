@@ -23,8 +23,6 @@ jobs:
       - name: Install Dependencies
         run: |
           set -e
-
-          # Packages we desperately need
           brew install ldid dpkg libarchive
 
       - name: Cache Theos
@@ -38,14 +36,22 @@ jobs:
         if: steps.cache-theos.outputs.cache-hit != 'true'
         run: |
           set -e
-
           bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
+
+      - name: Cache Build Artifacts
+        id: cache-artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            Nyxian/LindChain/LLVM.xcframework
+            Nyxian/LindChain/Clang.xcframework
+            Nyxian/LindChain/JBSupport/libroot.a
+            Nyxian/LindChain/JBSupport/tshelper
+          key: build-artifacts-${{ runner.os }}-${{ hashFiles('Makefile', 'LLVM-On-iOS/Makefile', 'libroot/Makefile', 'TrollStore/Makefile') }}
 
       - name: Setup
         run: |
           set -e
-
-          # Setting TheOS stuff up
           echo "THEOS=~/theos" >> $GITHUB_ENV
           echo "PATH=$HOME/theos/bin:$PATH" >> $GITHUB_ENV
 
@@ -53,29 +59,21 @@ jobs:
         timeout-minutes: 1200
         run: |
           set -e
-
-          # Build the project (jailed)
           make jailed
 
       - name: Build Rootless
         run: |
           set -e
-
-          # Build the project (rootless)
           make rootless
 
       - name: Build Roothide
         run: |
           set -e
-
-          # Build the project (roothide)
           make roothide
 
       - name: Build Rootful
         run: |
           set -e
-
-          # Build the project (roothide)
           make rootful
 
       - name: Upload Jailed

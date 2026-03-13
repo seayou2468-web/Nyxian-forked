@@ -32,6 +32,17 @@ jobs:
           set -e
           bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
 
+      - name: Cache Build Artifacts
+        id: cache-artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            Nyxian/LindChain/LLVM.xcframework
+            Nyxian/LindChain/Clang.xcframework
+            Nyxian/LindChain/JBSupport/libroot.a
+            Nyxian/LindChain/JBSupport/tshelper
+          key: build-artifacts-${{ runner.os }}-${{ hashFiles('Makefile', 'LLVM-On-iOS/Makefile', 'libroot/Makefile', 'TrollStore/Makefile') }}
+
       - name: Setup
         run: |
           set -e
