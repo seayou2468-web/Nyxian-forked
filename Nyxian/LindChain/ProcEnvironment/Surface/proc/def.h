@@ -34,7 +34,7 @@
 #define proc_getmaxentitlements(proc) proc->nyx.max_entitlements
 
 #define proc_setpid(proc, pid) proc->bsd.kp_proc.p_pid = pid
-#define proc_setppid(proc, ppid) proc->bsd.kp_proc.p_oppid = ppid; proc->bsd.kp_eproc.e_ppid = ppid; proc->bsd.kp_eproc.e_pgid = ppid
+#define proc_setppid(proc, ppid) proc->bsd.kp_proc.p_oppid = ppid; proc->bsd.kp_eproc.e_ppid = ppid
 #define proc_setentitlements(proc, entitlement) proc->nyx.entitlements = entitlement
 #define proc_setmaxentitlements(proc, entitlement) proc->nyx.max_entitlements = entitlement
 

@@ -275,6 +275,11 @@ static void* syscall_worker_thread(void *ctx)
         }
     }
     
+    if(buffer != NULL)
+    {
+        vm_deallocate(mach_task_self(), (vm_address_t)buffer, sizeof(recv_buffer_t));
+    }
+
     return NULL;
 }
 

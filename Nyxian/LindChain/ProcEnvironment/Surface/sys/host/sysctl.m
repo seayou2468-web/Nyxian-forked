@@ -81,7 +81,7 @@ int sysctl_hw_cpu_type(sysctl_req_t *req) { return sysctl_handle_int(req, 0x0100
 int sysctl_hw_cpu_subtype(sysctl_req_t *req) { return sysctl_handle_int(req, 2); } // CPU_SUBTYPE_ARM64_V8
 
 
-int sysctl_hw_cpufamily(sysctl_req_t *req) { return sysctl_handle_int(req, 0x12345678); } // Apple Silicon generic
+int sysctl_hw_cpufamily(sysctl_req_t *req) { return sysctl_handle_int(req, 0x6e254e4c); } // Apple Silicon generic
 int sysctl_hw_vectorunit(sysctl_req_t *req) { return sysctl_handle_int(req, 1); }
 int sysctl_hw_optional_floatingpoint(sysctl_req_t *req) { return sysctl_handle_int(req, 1); }
 int sysctl_kern_bootargs(sysctl_req_t *req) { return sysctl_handle_string(req, "rootdev=/dev/disk0s1"); }
@@ -165,7 +165,7 @@ int sysctl_kernhostname(sysctl_req_t *req)
 int sysctl_hw_ncpu(sysctl_req_t *req) { return sysctl_handle_int(req, (int)[[NSProcessInfo processInfo] activeProcessorCount]); }
 int sysctl_hw_pagesize(sysctl_req_t *req) { return sysctl_handle_int(req, (int)getpagesize()); }
 int sysctl_hw_memsize(sysctl_req_t *req) { return sysctl_handle_int64(req, (int64_t)[[NSProcessInfo processInfo] physicalMemory]); }
-int sysctl_hw_machine(sysctl_req_t *req) { return sysctl_handle_string(req, "arm64"); }
+int sysctl_hw_machine(sysctl_req_t *req) { return sysctl_handle_string(req, "iPhone18,3"); }
 int sysctl_hw_model(sysctl_req_t *req) { return sysctl_handle_string(req, "iPhone18,3"); }
 int sysctl_hw_cpufreq(sysctl_req_t *req) { return sysctl_handle_int64(req, 3200000000LL); }
 int sysctl_hw_busfreq(sysctl_req_t *req) { return sysctl_handle_int64(req, 1000000000LL); }
@@ -184,9 +184,25 @@ int sysctl_kern_ngroups(sysctl_req_t *req) { return sysctl_handle_int(req, 16); 
 int sysctl_kern_saved_ids(sysctl_req_t *req) { return sysctl_handle_int(req, 1); }
 int sysctl_kern_boottime(sysctl_req_t *req) { struct timeval tv = { .tv_sec = 1700000000, .tv_usec = 0 }; size_t len = sizeof(struct timeval); if (req->oldlenp) { if (req->oldp) { size_t oldlen = 0; if (!mach_syscall_copy_in(req->task, sizeof(size_t), &oldlen, req->oldlenp)) return -1; if (oldlen < len) { req->err = ENOMEM; return -1; } if (!mach_syscall_copy_out(req->task, len, &tv, req->oldp)) return -1; } if (!mach_syscall_copy_out(req->task, sizeof(size_t), &len, req->oldlenp)) return -1; } return 0; } /* Needs better handle for struct */
 
+
+int sysctl_kern_osproductversion(sysctl_req_t *req) { return sysctl_handle_string(req, "19.0"); }
+int sysctl_kern_osbuildversion(sysctl_req_t *req) { return sysctl_handle_string(req, "23A123"); }
+int sysctl_hw_cputype(sysctl_req_t *req) { return sysctl_handle_int(req, 16777228); } // CPU_TYPE_ARM64
+int sysctl_hw_cpusubtype(sysctl_req_t *req) { return sysctl_handle_int(req, 2); } // CPU_SUBTYPE_ARM64E
+int sysctl_hw_nperflevels(sysctl_req_t *req) { return sysctl_handle_int(req, 2); }
+int sysctl_hw_perflevel0_physicalcpu(sysctl_req_t *req) { return sysctl_handle_int(req, 6); }
+int sysctl_hw_perflevel0_logicalcpu(sysctl_req_t *req) { return sysctl_handle_int(req, 6); }
+int sysctl_hw_perflevel1_physicalcpu(sysctl_req_t *req) { return sysctl_handle_int(req, 2); }
+int sysctl_hw_perflevel1_logicalcpu(sysctl_req_t *req) { return sysctl_handle_int(req, 2); }
+
 /* --- Map Definitions --- */
 
 static const sysctl_map_entry_t sysctl_map[] = {
+    { { CTL_KERN, KERN_OSPRODUCTVERSION       }, 2, sysctl_kern_osproductversion },
+    { { CTL_KERN, KERN_OSVERSION              }, 2, sysctl_kern_osbuildversion },
+    { { CTL_HW,   HW_CPU_TYPE                 }, 2, sysctl_hw_cputype },
+    { { CTL_HW,   HW_CPU_SUBTYPE              }, 2, sysctl_hw_cpusubtype },
+
     { { CTL_KERN, KERN_MAXFILES                }, 2, sysctl_kern_maxfiles },
     { { CTL_KERN, KERN_MAXFILESPERPROC         }, 2, sysctl_kern_maxfilesperproc },
     { { CTL_KERN, KERN_BOOTARGS               }, 2, sysctl_kern_bootargs },
@@ -221,6 +237,12 @@ static const sysctl_map_entry_t sysctl_map[] = {
 };
 
 static const sysctl_name_map_entry_t sysctl_name_map[] = {
+    { "kern.osproductversion",  { CTL_KERN, KERN_OSPRODUCTVERSION       }, 2 },
+    { "kern.osbuildversion",    { CTL_KERN, KERN_OSVERSION              }, 2 },
+    { "hw.nperflevels",         { CTL_HW,   101                         }, 2 },
+    { "hw.perflevel0.physicalcpu", { CTL_HW, 102, 0                      }, 3 },
+    { "hw.perflevel0.logicalcpu",  { CTL_HW, 102, 1                      }, 3 },
+
     { "kern.maxfiles",          { CTL_KERN, KERN_MAXFILES                }, 2 },
     { "kern.maxfilesperproc",   { CTL_KERN, KERN_MAXFILESPERPROC         }, 2 },
     { "hw.cputype",             { CTL_HW,   HW_CPU_TYPE                  }, 2 },
@@ -268,6 +290,11 @@ static sysctl_fn_t sysctl_lookup(sysctl_req_t *req)
         if(match) return e->fn;
     }
     if (req->name[0] == CTL_HW) {
+        if (req->name[1] == 101) return sysctl_hw_nperflevels;
+        if (req->name[1] == 102) {
+            if (req->name[2] == 0) return sysctl_hw_perflevel0_physicalcpu;
+            if (req->name[2] == 1) return sysctl_hw_perflevel0_logicalcpu;
+        }
         if (req->name[1] == 74) return sysctl_hw_l1icachesize;
         if (req->name[1] == 75) return sysctl_hw_l1dcachesize;
         if (req->name[1] == 76) return sysctl_hw_l2cachesize;
