@@ -1,6 +1,6 @@
 # Nyxian Framework Performance & Compatibility Improvement Report (2026 Update)
 
-As a performance improvement expert for the Nyxian framework, I have completed an overhaul focused on low-load, high-efficiency operations, memory safety, and modern Darwin compatibility (iOS 26.x / Darwin 26.x).
+As a performance improvement expert for the Nyxian framework, I have completed an overhaul focused on low-load, high-efficiency operations, memory safety, and modern Darwin compatibility (iOS 26.x / Darwin 25.x).
 
 ## 1. Memory Leak & Deadlock Elimination
 
@@ -39,13 +39,13 @@ static void* syscall_worker_thread(void *ctx) {
 
 ---
 
-## 2. Sysctl Modernization (iOS 26.3 / Darwin 26.3 Support)
+## 2. Sysctl Modernization (iOS 26.3 / Darwin 25.3 Support)
 
-The `sysctl` system was significantly expanded and updated to match the 2026 software environment (iOS 26.x / Darwin 26.x).
+The `sysctl` system was significantly expanded and updated to match the 2026 software environment (iOS 26.x / Darwin 25.x).
 
 ### Updated Metrics (2026):
 - `kern.osproductversion`: "26.3"
-- `kern.osrelease`: "26.3.0"
+- `kern.osrelease`: "25.3.0"
 - `kern.osversion`: "26D5034a"
 - `hw.machine` / `hw.model`: "iPhone19,3" (iPhone 18 Pro)
 - `hw.cpufamily`: `0x7e254e4c` (A20 chip)
@@ -106,4 +106,4 @@ sequenceDiagram
 ## Summary of Impact
 - **Reduced Memory Footprint:** Fixed persistent leaks in the syscall subsystem.
 - **Improved Stability:** Eliminated potential crashes from atomic overflows.
-- **Enhanced Compatibility:** Fully updated for iOS 26.3 / Darwin 26.3, ensuring modern developer tools operate correctly in the virtualized environment.
+- **Enhanced Compatibility:** Fully updated for iOS 26.3 / Darwin 25.3, ensuring modern developer tools operate correctly in the virtualized environment.

@@ -176,9 +176,9 @@ int sysctl_hw_l1dcachesize(sysctl_req_t *req) { return sysctl_handle_int(req, 65
 int sysctl_hw_l2cachesize(sysctl_req_t *req) { return sysctl_handle_int(req, 4194304); }
 
 int sysctl_kern_ostype(sysctl_req_t *req) { return sysctl_handle_string(req, "Darwin"); }
-int sysctl_kern_osrelease(sysctl_req_t *req) { return sysctl_handle_string(req, "26.3.0"); }
+int sysctl_kern_osrelease(sysctl_req_t *req) { return sysctl_handle_string(req, "25.3.0"); }
 int sysctl_kern_osversion(sysctl_req_t *req) { return sysctl_handle_string(req, "26D5034a"); }
-int sysctl_kern_version(sysctl_req_t *req) { return sysctl_handle_string(req, "Darwin Kernel Version 26.3.0: Wed Feb 11 21:34:12 PST 2026; root:xnu-14000.1.13~1/RELEASE_ARM64_T8160"); }
+int sysctl_kern_version(sysctl_req_t *req) { return sysctl_handle_string(req, "Darwin Kernel Version 25.3.0: Wed Feb 11 21:34:12 PST 2026; root:xnu-12000.1.13~1/RELEASE_ARM64_T8160"); }
 int sysctl_kern_osvariant_status(sysctl_req_t *req) { return sysctl_handle_int64(req, 0); }
 int sysctl_kern_ngroups(sysctl_req_t *req) { return sysctl_handle_int(req, 16); }
 int sysctl_kern_saved_ids(sysctl_req_t *req) { return sysctl_handle_int(req, 1); }
