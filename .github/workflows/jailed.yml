@@ -32,6 +32,12 @@ jobs:
           set -e
           bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
 
+      - name: Setup SDK
+        run: |
+          mkdir -p ~/theos/sdks
+          curl -L https://github.com/theos/sdks/archive/master.tar.gz | tar -xz -C ~/theos/sdks --strip-components=1
+
+
       - name: Cache Build Artifacts
         id: cache-artifacts
         uses: actions/cache@v4
