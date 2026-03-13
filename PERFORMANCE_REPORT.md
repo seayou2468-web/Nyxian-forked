@@ -8,31 +8,6 @@ As a performance improvement expert for the Nyxian framework, I have completed a
 **Issue:** Each worker thread in the syscall server allocated a `recv_buffer_t` via `vm_allocate` but never freed it upon server shutdown or thread exit, leading to persistent memory growth during long sessions.
 **Fix:** Added `vm_deallocate` in the worker thread's exit path.
 
-**Before:**
-```c
-static void* syscall_worker_thread(void *ctx) {
-    // ... loop ...
-    while(server->running) {
-        // ...
-    }
-    return NULL;
-}
-```
-
-**After:**
-```c
-static void* syscall_worker_thread(void *ctx) {
-    // ... loop ...
-    while(server->running) {
-        // ...
-    }
-    if(buffer != NULL) {
-        vm_deallocate(mach_task_self(), (vm_address_t)buffer, sizeof(recv_buffer_t));
-    }
-    return NULL;
-}
-```
-
 ### Concurrency: Atomic Index Overflow
 **Issue:** The thread controller used `atomic_fetch_add` on a signed integer, which could overflow and result in negative indices, causing crashes when used with the modulo operator.
 **Fix:** Cast to `unsigned int` before modulo operation to ensure safe indexing.
@@ -41,14 +16,14 @@ static void* syscall_worker_thread(void *ctx) {
 
 ## 2. Sysctl Modernization (iOS 26.3 / Darwin 25.3 Support)
 
-The `sysctl` system was significantly expanded and updated to match the 2026 software environment (iOS 26.x / Darwin 25.x).
+The `sysctl` system was significantly expanded and updated to match the 2026 software environment (iOS 26.x / Darwin 25.x) on representative hardware.
 
 ### Updated Metrics (2026):
 - `kern.osproductversion`: "26.3"
 - `kern.osrelease`: "25.3.0"
 - `kern.osversion`: "26D5034a"
-- `hw.machine` / `hw.model`: "iPhone19,3" (iPhone 18 Pro)
-- `hw.cpufamily`: `0x7e254e4c` (A20 chip)
+- `hw.machine` / `hw.model`: "iPhone14,2" (iPhone 13 Pro class)
+- `hw.cpufamily`: `0x7e254e4c` (A20 chip class)
 
 ### New Supported OIDs:
 - `kern.osproductversion`
@@ -63,11 +38,11 @@ The `sysctl` system was significantly expanded and updated to match the 2026 sof
 ## 3. Darwin Compatibility: Process Lifecycle
 
 ### Fixed: Incorrect Process Group Association
-**Issue:** The `proc_setppid` macro was incorrectly setting the process group ID (`e_pgid`) to the parent's PID whenever the parent PID was updated.
-**Fix:** Removed the automatic `e_pgid` update, allowing processes to correctly manage their own group membership via `setpgid`.
+**Issue:** The `proc_setppid` macro was incorrectly setting the process group ID (`e_pgid`) to the parent's PID.
+**Fix:** Removed the automatic `e_pgid` update, allowing standard session/process group inheritance.
 
 ### Improved: `wait4` Robustness
-- Verified state transitions for `SSTOP` and `SZOMB` processes to ensure `wait4` correctly reports exit codes and stop signals without hanging.
+- Verified state transitions for `SSTOP` and `SZOMB` processes to ensure `wait4` correctly reports exit codes and stop signals.
 
 ---
 
@@ -106,4 +81,4 @@ sequenceDiagram
 ## Summary of Impact
 - **Reduced Memory Footprint:** Fixed persistent leaks in the syscall subsystem.
 - **Improved Stability:** Eliminated potential crashes from atomic overflows.
-- **Enhanced Compatibility:** Fully updated for iOS 26.3 / Darwin 25.3, ensuring modern developer tools operate correctly in the virtualized environment.
+- **Enhanced Compatibility:** Fully updated for iOS 26.3 / Darwin 25.3 on iPhone 13 class hardware, ensuring modern developer tools operate correctly.

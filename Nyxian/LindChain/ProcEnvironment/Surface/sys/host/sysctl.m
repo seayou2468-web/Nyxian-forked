@@ -165,8 +165,8 @@ int sysctl_kernhostname(sysctl_req_t *req)
 int sysctl_hw_ncpu(sysctl_req_t *req) { return sysctl_handle_int(req, (int)[[NSProcessInfo processInfo] activeProcessorCount]); }
 int sysctl_hw_pagesize(sysctl_req_t *req) { return sysctl_handle_int(req, (int)getpagesize()); }
 int sysctl_hw_memsize(sysctl_req_t *req) { return sysctl_handle_int64(req, (int64_t)[[NSProcessInfo processInfo] physicalMemory]); }
-int sysctl_hw_machine(sysctl_req_t *req) { return sysctl_handle_string(req, "iPhone19,3"); }
-int sysctl_hw_model(sysctl_req_t *req) { return sysctl_handle_string(req, "iPhone19,3"); }
+int sysctl_hw_machine(sysctl_req_t *req) { return sysctl_handle_string(req, "iPhone14,2"); }
+int sysctl_hw_model(sysctl_req_t *req) { return sysctl_handle_string(req, "iPhone14,2"); }
 int sysctl_hw_cpufreq(sysctl_req_t *req) { return sysctl_handle_int64(req, 3200000000LL); }
 int sysctl_hw_busfreq(sysctl_req_t *req) { return sysctl_handle_int64(req, 1000000000LL); }
 int sysctl_hw_tbfreq(sysctl_req_t *req) { return sysctl_handle_int64(req, 24000000LL); }
