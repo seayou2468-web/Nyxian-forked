@@ -20,10 +20,18 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Cache ccache
+        uses: actions/cache@v4
+        with:
+          path: ~/.ccache
+          key: ccache-${{ runner.os }}-${{ github.sha }}
+          restore-keys: ccache-${{ runner.os }}-
+
+
       - name: Install Dependencies
         run: |
           set -e
-          brew install ldid dpkg libarchive cmake ninja
+          brew install ldid dpkg libarchive cmake ninja ccache
 
       - name: Cache Theos
         id: cache-theos
@@ -58,7 +66,9 @@ jobs:
       - name: Setup
         run: |
           set -e
+          echo "CCACHE_DIR=~/.ccache" >> $GITHUB_ENV
           echo "THEOS=~/theos" >> $GITHUB_ENV
+
           echo "PATH=$HOME/theos/bin:$PATH" >> $GITHUB_ENV
 
       - name: Build Jailed

@@ -27,7 +27,7 @@ rootful: compile pseudo-sign package-deb clean
 # Dependencies
 # Addressing: https://www.reddit.com/r/osdev/comments/1qknfa1/comment/o1b0gsm (Only workflows can and will use LazySetup)
 Nyxian/LindChain/LLVM.xcframework:
-	cd LLVM-On-iOS; $(MAKE)
+	cd LLVM-On-iOS; $(MAKE) -j$(shell sysctl -n hw.ncpu)
 	mv LLVM-On-iOS/LLVM.xcframework Nyxian/LindChain/LLVM.xcframework
 
 Nyxian/LindChain/Clang.xcframework: Nyxian/LindChain/LLVM.xcframework
@@ -35,16 +35,16 @@ Nyxian/LindChain/Clang.xcframework: Nyxian/LindChain/LLVM.xcframework
 
 # Addressing: https://www.reddit.com/r/osdev/comments/1qknfa1/comment/o1b0gsm (Totally forgot to address libroot.a)
 Nyxian/LindChain/JBSupport/libroot.a:
-	cd libroot; $(MAKE)
+	cd libroot; $(MAKE) -j$(shell sysctl -n hw.ncpu)
 	mv libroot/libroot_dyn_iphoneos-arm64.a Nyxian/LindChain/JBSupport/libroot.a
 	mv libroot/src/libroot.h Nyxian/LindChain/JBSupport/libroot.h
 
 Nyxian/LindChain/JBSupport/tshelper:
-	$(MAKE) -C TrollStore pre_build
-	$(MAKE) -C TrollStore make_fastPathSign MAKECMDGOALS=
-	$(MAKE) -C TrollStore make_roothelper MAKECMDGOALS=
-	$(MAKE) -C TrollStore make_trollstore MAKECMDGOALS=
-	$(MAKE) -C TrollStore make_trollhelper_embedded MAKECMDGOALS=
+	$(MAKE) -j$(shell sysctl -n hw.ncpu) -C TrollStore pre_build
+	$(MAKE) -j$(shell sysctl -n hw.ncpu) -C TrollStore make_fastPathSign MAKECMDGOALS=
+	$(MAKE) -j$(shell sysctl -n hw.ncpu) -C TrollStore make_roothelper MAKECMDGOALS=
+	$(MAKE) -j$(shell sysctl -n hw.ncpu) -C TrollStore make_trollstore MAKECMDGOALS=
+	$(MAKE) -j$(shell sysctl -n hw.ncpu) -C TrollStore make_trollhelper_embedded MAKECMDGOALS=
 	cp TrollStore/RootHelper/.theos/obj/trollstorehelper Nyxian/LindChain/JBSupport/tshelper
 
 # Helper
