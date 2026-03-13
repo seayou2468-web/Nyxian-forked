@@ -1,6 +1,6 @@
-# Nyxian Framework Performance & Compatibility Improvement Report
+# Nyxian Framework Performance & Compatibility Improvement Report (2026 Update)
 
-As a performance improvement expert for the Nyxian framework, I have completed an overhaul focused on low-load, high-efficiency operations, memory safety, and modern Darwin compatibility.
+As a performance improvement expert for the Nyxian framework, I have completed an overhaul focused on low-load, high-efficiency operations, memory safety, and modern Darwin compatibility (iOS 26.x / Darwin 32.x).
 
 ## 1. Memory Leak & Deadlock Elimination
 
@@ -39,21 +39,24 @@ static void* syscall_worker_thread(void *ctx) {
 
 ---
 
-## 2. Sysctl Modernization (Darwin 25/26 Support)
+## 2. Sysctl Modernization (iOS 26.3 / Darwin 32.3 Support)
 
-The `sysctl` system was significantly expanded to support modern tools and apps that check for newer Darwin OIDs.
+The `sysctl` system was significantly expanded and updated to match the 2026 software environment (iOS 26.x).
+
+### Updated Metrics (2026):
+- `kern.osproductversion`: "26.3"
+- `kern.osrelease`: "32.3.0"
+- `kern.osversion`: "32D5034a"
+- `hw.machine` / `hw.model`: "iPhone19,3" (iPhone 18 Pro)
+- `hw.cpufamily`: `0x7e254e4c` (A20 chip)
 
 ### New Supported OIDs:
-- `kern.osproductversion` (19.0)
-- `kern.osbuildversion` (23A123)
+- `kern.osproductversion`
+- `kern.osbuildversion`
 - `hw.cputype` / `hw.cpusubtype` (ARM64E support)
 - `hw.nperflevels` (2)
 - `hw.perflevel0.physicalcpu` (6)
 - `hw.perflevel0.logicalcpu` (6)
-- `hw.cpufamily` (Updated to A18/M4 class: `0x6e254e4c`)
-
-### Consistency:
-- Updated `hw.machine` and `hw.model` to consistently report `iPhone18,3`.
 
 ---
 
@@ -103,4 +106,4 @@ sequenceDiagram
 ## Summary of Impact
 - **Reduced Memory Footprint:** Fixed persistent leaks in the syscall subsystem.
 - **Improved Stability:** Eliminated potential crashes from atomic overflows.
-- **Enhanced Compatibility:** Apps and tools designed for iOS 18+ and Darwin 25/26 now correctly identify the environment capabilities.
+- **Enhanced Compatibility:** Fully updated for iOS 26.3, ensuring modern developer tools operate correctly in the virtualized environment.
