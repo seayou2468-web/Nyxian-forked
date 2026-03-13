@@ -28,6 +28,7 @@ import Runestone
 class Coordinator: NSObject, TextViewDelegate {
     private weak var parent: CodeEditorViewController?
     private var entries: [UInt64:(NeoButton?,UIView?)] = [:]
+    private let entriesLock = NSLock()
     
     private(set) var isProcessing: Bool = false
     private(set) var isInvalidated: Bool = false
@@ -173,181 +174,144 @@ class Coordinator: NSObject, TextViewDelegate {
     func redrawDiag() {
         guard let parent = self.parent else { return }
         
-        if !self.entries.isEmpty {
-            for item in self.entries {
-                DispatchQueue.main.async { [weak self] in
-                    guard let self = self else { return }
-                    guard let rect = parent.textView.rectForLine(Int(item.key)) else {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.entriesLock.lock()
+            let currentEntries = self.entries
+            self.entriesLock.unlock()
+
+            if !currentEntries.isEmpty {
+                for (line, views) in currentEntries {
+                    guard let rect = parent.textView.rectForLine(Int(line)) else {
                         UIView.animate(withDuration: 0.3, animations: {
-                            item.value.0?.alpha = 0
-                            item.value.1?.alpha = 0
+                            views.0?.alpha = 0
+                            views.1?.alpha = 0
                         }, completion: { _ in
-                            item.value.0?.removeFromSuperview()
-                            item.value.1?.removeFromSuperview()
-                            self.entries.removeValue(forKey: item.key)
+                            views.0?.removeFromSuperview()
+                            views.1?.removeFromSuperview()
+                            self.entriesLock.lock()
+                            self.entries.removeValue(forKey: line)
+                            self.entriesLock.unlock()
                         })
-                        return
+                        continue
                     }
-                    item.value.0?.frame = CGRect(x: 0, y: rect.origin.y, width: parent.textView.gutterWidth, height: rect.height)
-                    item.value.1?.frame = CGRect(x: 0, y: rect.origin.y, width: parent.textView.bounds.size.width, height: rect.height)
+                    views.0?.frame = CGRect(x: 0, y: rect.origin.y, width: parent.textView.gutterWidth, height: rect.height)
+                    views.1?.frame = CGRect(x: 0, y: rect.origin.y, width: parent.textView.bounds.size.width, height: rect.height)
                 }
             }
         }
     }
-    
     func updateDiag() {
         guard let parent = self.parent else { return }
-        if !self.entries.isEmpty {
-            let waitonmebaby: DispatchSemaphore = DispatchSemaphore(value: 0)
-            DispatchQueue.main.async {
-                UIView.animate(withDuration: 0.3, animations: {
-                    for item in self.entries {
-                        item.value.0?.alpha = 0
-                        item.value.1?.alpha = 0
-                    }
-                }, completion: { _ in
-                    for item in self.entries {
-                        item.value.0?.removeFromSuperview()
-                        item.value.1?.removeFromSuperview()
-                    }
-                    self.entries.removeAll()
-                    waitonmebaby.signal()
-                })
-            }
-            waitonmebaby.wait()
-        }
         
-        for item in diag {
-            guard self.entries[item.line] == nil else { continue }
-            self.entries[item.line] = (nil, nil)
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
             
-            var rect: CGRect?
-            DispatchQueue.main.sync {
-                rect = parent.textView.rectForLine(Int(item.line))
-            }
-            guard let rect = rect else { continue }
+            self.entriesLock.lock()
+            let oldEntries = self.entries
+            self.entries.removeAll()
+            self.entriesLock.unlock()
             
-            let properties: (String,UIColor) = self.vtkey[Int(item.type)]
-            
-            DispatchQueue.main.async {
-                let view: UIView = UIView(frame: CGRect(x: 0, y: rect.origin.y, width: 3000, height: rect.height))
-                view.backgroundColor = properties.1
-                view.isUserInteractionEnabled = false
+            UIView.animate(withDuration: 0.3, animations: {
+                for item in oldEntries {
+                    item.value.0?.alpha = 0
+                    item.value.1?.alpha = 0
+                }
+            }, completion: { _ in
+                for item in oldEntries {
+                    item.value.0?.removeFromSuperview()
+                    item.value.1?.removeFromSuperview()
+                }
                 
-                let button = NeoButton(frame: CGRect(x: 0, y: rect.origin.y, width: parent.textView.gutterWidth, height: rect.height))
-                
-                button.backgroundColor = properties.1.withAlphaComponent(1.0)
-                let configuration: UIImage.SymbolConfiguration = UIImage.SymbolConfiguration(pointSize: parent.textView.theme.lineNumberFont.pointSize)
-                let image = UIImage(systemName: properties.0, withConfiguration: configuration)
-                button.setImage(image, for: .normal)
-                button.imageView?.tintColor = UIColor.systemBackground
-                
-                var widthConstraint: NSLayoutConstraint?
-                
-                button.setAction { [weak self, weak button, weak parent] in
-                    guard let self = self, let button = button, let parent = parent else{ return }
-                    button.stateview = !button.stateview
-                    
-                    if button.stateview {
+                // Now add new diagnostics
+                DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+                    guard let self = self else { return }
+                    for item in self.diag {
+                        var rect: CGRect?
+                        DispatchQueue.main.sync {
+                            rect = parent.textView.rectForLine(Int(item.line))
+                        }
+                        guard let lineRect = rect else { continue }
+
+                        let properties = self.vtkey[Int(item.type)]
+
                         DispatchQueue.main.async {
-                            let shift: CGFloat = parent.textView.gutterWidth
-                            let finalWidth = (parent.textView.bounds.width) / 1.5
-                            
-                            let modHeight = rect.height + 10
-                            
-                            let preview = ErrorPreview(
-                                parent: self,
-                                frame: CGRect.zero,
-                                message: item.message,
-                                color: properties.1,
-                                minH: modHeight
-                            )
-                            preview.translatesAutoresizingMaskIntoConstraints = false
-                            button.errorview = preview
-                            
-                            preview.alpha = 0
-                            
-                            if let textView = self.parent?.textView {
-                                textView.addSubview(preview)
-                                
-                                widthConstraint = preview.widthAnchor.constraint(equalToConstant: 0)
-                                NSLayoutConstraint.activate([
-                                    preview.leadingAnchor.constraint(equalTo: textView.leadingAnchor, constant: shift),
-                                    preview.topAnchor.constraint(equalTo: textView.topAnchor, constant: rect.origin.y),
-                                    widthConstraint!
-                                ])
-                                
-                                textView.layoutIfNeeded()
-                                
-                                UIView.animate(
-                                    withDuration: 0.5,
-                                    delay: 0,
-                                    usingSpringWithDamping: 0.8,
-                                    initialSpringVelocity: 0.5,
-                                    options: [.curveEaseOut],
-                                    animations: {
-                                        preview.alpha = 1
-                                        widthConstraint!.constant = finalWidth
-                                        textView.layoutIfNeeded()
-                                    },
-                                    completion: nil
-                                )
+                            self.entriesLock.lock()
+                            if self.entries[item.line] != nil {
+                                self.entriesLock.unlock()
+                                return
                             }
-                        }
-                    } else {
-                        if let preview = button.errorview {
-                            DispatchQueue.main.async {
-                                UIView.animate(
-                                    withDuration: 0.3,
-                                    delay: 0,
-                                    options: [.curveEaseIn],
-                                    animations: {
-                                        preview.alpha = 0
-                                        widthConstraint!.constant = 0
-                                        preview.superview?.layoutIfNeeded()
-                                    },
-                                    completion: { _ in
-                                        preview.removeFromSuperview()
+                            self.entriesLock.unlock()
+
+                            let view = UIView(frame: CGRect(x: 0, y: lineRect.origin.y, width: 3000, height: lineRect.height))
+                            view.backgroundColor = properties.1
+                            view.isUserInteractionEnabled = false
+                            
+                            let button = NeoButton(frame: CGRect(x: 0, y: lineRect.origin.y, width: parent.textView.gutterWidth, height: lineRect.height))
+                            button.backgroundColor = properties.1.withAlphaComponent(1.0)
+                            let configuration = UIImage.SymbolConfiguration(pointSize: parent.textView.theme.lineNumberFont.pointSize)
+                            button.setImage(UIImage(systemName: properties.0, withConfiguration: configuration), for: .normal)
+                            button.imageView?.tintColor = UIColor.systemBackground
+                            
+                            button.setAction { [weak self, weak button, weak parent] in
+                                guard let self = self, let button = button, let parent = parent else { return }
+                                button.stateview = !button.stateview
+                                if button.stateview {
+                                    let shift = parent.textView.gutterWidth
+                                    let finalWidth = (parent.textView.bounds.width) / 1.5
+                                    let preview = ErrorPreview(parent: self, frame: .zero, message: item.message, color: properties.1, minH: lineRect.height + 10)
+                                    preview.translatesAutoresizingMaskIntoConstraints = false
+                                    button.errorview = preview
+                                    preview.alpha = 0
+
+                                    parent.textView.addSubview(preview)
+                                    let widthConstraint = preview.widthAnchor.constraint(equalToConstant: 0)
+                                    NSLayoutConstraint.activate([
+                                        preview.leadingAnchor.constraint(equalTo: parent.textView.leadingAnchor, constant: shift),
+                                        preview.topAnchor.constraint(equalTo: parent.textView.topAnchor, constant: lineRect.origin.y),
+                                        widthConstraint
+                                    ])
+                                    parent.textView.layoutIfNeeded()
+                                    UIView.animate(withDuration: 0.5, delay: 0, usingSpringWithDamping: 0.8, initialSpringVelocity: 0.5, options: [.curveEaseOut], animations: {
+                                        preview.alpha = 1
+                                        widthConstraint.constant = finalWidth
+                                        parent.textView.layoutIfNeeded()
+                                    })
+                                } else {
+                                    if let preview = button.errorview {
+                                        UIView.animate(withDuration: 0.3, animations: {
+                                            preview.alpha = 0
+                                        }, completion: { _ in
+                                            preview.removeFromSuperview()
+                                        })
                                     }
-                                )
+                                }
+                            }
+                            
+                            view.alpha = 0
+                            button.alpha = 0
+                            
+                            self.entriesLock.lock()
+                            self.entries[item.line] = (button, view)
+                            self.entriesLock.unlock()
+
+                            if let textInputView = parent.textView.getTextInputView() {
+                                textInputView.addSubview(view)
+                                textInputView.sendSubviewToBack(view)
+                                textInputView.gutterContainerView.isUserInteractionEnabled = true
+                                textInputView.gutterContainerView.addSubview(button)
+                            }
+
+                            UIView.animate(withDuration: 0.3) {
+                                view.alpha = 1
+                                button.alpha = 1
                             }
                         }
                     }
                 }
-                
-                view.alpha = 0
-                button.alpha = 0
-                self.entries[item.line] = (button,view)
-                
-                if let textInputView = parent.textView.getTextInputView() {
-                    textInputView.addSubview(view)
-                    textInputView.sendSubviewToBack(view)
-                    textInputView.gutterContainerView.isUserInteractionEnabled = true
-                    textInputView.gutterContainerView.addSubview(button)
-                }
-                
-                UIView.animate(withDuration: 0.3, animations: {
-                    view.alpha = 1
-                    button.alpha = 1
-                }, completion: { _ in
-                    button.isUserInteractionEnabled = true
-                })
-                
-            }
-        }
-        
-        DispatchQueue.main.async {
-            self.isProcessing = false
-            self.isInvalidated = false
-            
-            if self.needsAnotherProcess,
-               let textView = self.parent?.textView {
-                self.needsAnotherProcess = false
-                self.textViewDidChange(textView)
-            }
+            })
         }
     }
-    
     class ErrorPreview: UIView {
         var textView: UITextView
         var heigth: CGFloat = 0.0

@@ -20,65 +20,37 @@
 */
 
 #import <LindChain/ProcEnvironment/Surface/sys/host/sysctl.h>
+#import <LindChain/ProcEnvironment/Surface/proc/proc.h>
 #import <LindChain/ProcEnvironment/Surface/proc/list.h>
-#include <sys/sysctl.h>
-#include <regex.h>
-#import <Foundation/Foundation.h>
-
-/* sysctl defs */
-typedef struct {
-    int name[6];
-    u_int namelen;
-    userspace_pointer_t oldp;
-    userspace_pointer_t oldlenp;
-    userspace_pointer_t newp;
-    size_t newlen;
-    errno_t err;
-    task_t task;
-    ksurface_proc_snapshot_t *proc_snapshot;
-} sysctl_req_t;
-
-typedef int (*sysctl_fn_t)(sysctl_req_t *req);
-
-typedef struct {
-    const int mib[20];
-    size_t mib_len;
-    sysctl_fn_t fn;
-} sysctl_map_entry_t;
-
-typedef struct {
-    const char *name;
-    const int mib[6];
-    size_t mib_len;
-} sysctl_name_map_entry_t;
-
-/* sysctl apis */
+#import <LindChain/ProcEnvironment/Surface/proc/lookup.h>
+#import <LindChain/ProcEnvironment/Surface/surface.h>
+#import <LindChain/ProcEnvironment/Surface/obj/kvobject.h>
+#import <LindChain/ProcEnvironment/Utils/klog.h>
+#import <regex.h>
 
 int sysctl_kernmaxproc(sysctl_req_t *req)
 {
-    size_t user_outlen = 0;
-    size_t needed = sizeof(int);
-    int maxproc = PROC_MAX;
+    /* its always 1000 processes for our surface kernel lol */
+    int needed = 1000;
     
-    /* if user provided oldlenp, copy it in */
-    if(req->oldlenp != NULL &&
-       !mach_syscall_copy_in(req->task, sizeof(size_t), &user_outlen, req->oldlenp))
+    if(req->oldp != NULL && req->oldlenp != NULL)
     {
-        req->err = EFAULT;
-        return -1;
-    }
-    
-    /* if oldp is set user wants the value */
-    if(req->oldp)
-    {
-        /* sanitizing buffer lenght */
-        if(user_outlen < needed)
+        /* checking if buffer is big enough */
+        size_t user_outlen = 0;
+        if(!mach_syscall_copy_in(req->task, sizeof(size_t), &user_outlen, req->oldlenp))
+        {
+            req->err = EFAULT;
+            return -1;
+        }
+
+        if(user_outlen < sizeof(int))
         {
             req->err = ENOMEM;
             return -1;
         }
         
-        if(!mach_syscall_copy_out(req->task, sizeof(int), &maxproc, req->oldp))
+        /* copying it out */
+        if(!mach_syscall_copy_out(req->task, sizeof(int), &needed, req->oldp))
         {
             req->err = EFAULT;
             return -1;
@@ -265,7 +237,7 @@ int sysctl_kernhostname(sysctl_req_t *req)
             return -1;
         }
         
-        if(oldlenp < hlen) { req->err = ENOMEM; return -1; }
+        if(oldlenp < hlen) { req->err = ENOMEM; host_unlock(); return -1; }
         
         if(!mach_syscall_copy_out(req->task, hlen, ksurface->host_info.hostname, req->oldp) ||
            !mach_syscall_copy_out(req->task, sizeof(size_t), &hlen, req->oldlenp))
@@ -318,6 +290,52 @@ int sysctl_kernhostname(sysctl_req_t *req)
     return 0;
 }
 
+
+int sysctl_hw_string(sysctl_req_t *req, const char *val)
+{
+    if(req->oldp && req->oldlenp)
+    {
+        size_t len = strlen(val) + 1;
+        size_t oldlen = 0;
+        if(!mach_syscall_copy_in(req->task, sizeof(size_t), &oldlen, req->oldlenp)) return -1;
+        if(oldlen < len) { req->err = ENOMEM; return -1; }
+        if(!mach_syscall_copy_out(req->task, len, val, req->oldp)) return -1;
+        if(!mach_syscall_copy_out(req->task, sizeof(size_t), &len, req->oldlenp)) return -1;
+    }
+    return 0;
+}
+
+int sysctl_hw_int(sysctl_req_t *req, int val)
+{
+    if(req->oldp && req->oldlenp)
+    {
+        size_t len = sizeof(int);
+        if(!mach_syscall_copy_out(req->task, len, &val, req->oldp)) return -1;
+        if(!mach_syscall_copy_out(req->task, sizeof(size_t), &len, req->oldlenp)) return -1;
+    }
+    return 0;
+}
+
+int sysctl_hw_int64(sysctl_req_t *req, int64_t val)
+{
+    if(req->oldp && req->oldlenp)
+    {
+        size_t len = sizeof(int64_t);
+        if(!mach_syscall_copy_out(req->task, len, &val, req->oldp)) return -1;
+        if(!mach_syscall_copy_out(req->task, sizeof(size_t), &len, req->oldlenp)) return -1;
+    }
+    return 0;
+}
+
+int sysctl_hw_ncpu(sysctl_req_t *req) { return sysctl_hw_int(req, (int)[[NSProcessInfo processInfo] activeProcessorCount]); }
+int sysctl_hw_pagesize(sysctl_req_t *req) { return sysctl_hw_int(req, (int)getpagesize()); }
+int sysctl_hw_memsize(sysctl_req_t *req) { return sysctl_hw_int64(req, (int64_t)[[NSProcessInfo processInfo] physicalMemory]); }
+int sysctl_hw_machine(sysctl_req_t *req) { return sysctl_hw_string(req, "arm64"); }
+int sysctl_hw_model(sysctl_req_t *req) { return sysctl_hw_string(req, "iPhone"); }
+int sysctl_kern_ostype(sysctl_req_t *req) { return sysctl_hw_string(req, "Darwin"); }
+int sysctl_kern_osrelease(sysctl_req_t *req) { return sysctl_hw_string(req, "23.0.0"); }
+int sysctl_kern_osversion(sysctl_req_t *req) { return sysctl_hw_string(req, "23A123"); }
+
 /* sysctl map entries */
 static const sysctl_map_entry_t sysctl_map[] = {
     { { CTL_KERN, KERN_HOSTNAME                 }, 2, sysctl_kernhostname },
@@ -327,12 +345,28 @@ static const sysctl_map_entry_t sysctl_map[] = {
     { { CTL_KERN, KERN_PROC, KERN_PROC_PID      }, 3, sysctl_kernproc },
     { { CTL_KERN, KERN_PROC, KERN_PROC_UID      }, 3, sysctl_kernproc },
     { { CTL_KERN, KERN_PROC, KERN_PROC_RUID     }, 3, sysctl_kernproc },
+    { { CTL_HW,   HW_NCPU                       }, 2, sysctl_hw_ncpu },
+    { { CTL_HW,   HW_PAGESIZE                   }, 2, sysctl_hw_pagesize },
+    { { CTL_HW,   HW_MEMSIZE                    }, 2, sysctl_hw_memsize },
+    { { CTL_HW,   HW_MACHINE                    }, 2, sysctl_hw_machine },
+    { { CTL_HW,   HW_MODEL                      }, 2, sysctl_hw_model },
+    { { CTL_KERN, KERN_OSTYPE                   }, 2, sysctl_kern_ostype },
+    { { CTL_KERN, KERN_OSRELEASE                }, 2, sysctl_kern_osrelease },
+    { { CTL_KERN, KERN_OSVERSION                }, 2, sysctl_kern_osversion },
 };
 
 static const sysctl_name_map_entry_t sysctl_name_map[] = {
     { "kern.hostname",          { CTL_KERN, KERN_HOSTNAME                }, 2 },
     { "kern.maxproc",           { CTL_KERN, KERN_MAXPROC                 }, 2 },
     { "kern.proc.all",          { CTL_KERN, KERN_PROC, KERN_PROC_ALL     }, 3 },
+    { "hw.ncpu",                { CTL_HW,   HW_NCPU                      }, 2 },
+    { "hw.pagesize",            { CTL_HW,   HW_PAGESIZE                  }, 2 },
+    { "hw.memsize",             { CTL_HW,   HW_MEMSIZE                   }, 2 },
+    { "hw.machine",             { CTL_HW,   HW_MACHINE                   }, 2 },
+    { "hw.model",               { CTL_HW,   HW_MODEL                     }, 2 },
+    { "kern.ostype",            { CTL_KERN, KERN_OSTYPE                  }, 2 },
+    { "kern.osrelease",         { CTL_KERN, KERN_OSRELEASE               }, 2 },
+    { "kern.osversion",         { CTL_KERN, KERN_OSVERSION               }, 2 },
 };
 
 /* lookup symbol */

@@ -181,7 +181,8 @@ static void *LDEWorkerThreadMain(void *arg)
         return;
     }
     
-    int workerIndex = atomic_fetch_add(&_nextWorker, 1) % _workerCount;
+    unsigned int next = (unsigned int)atomic_fetch_add(&_nextWorker, 1);
+    int workerIndex = next % _workerCount;
     LDEWorkerThread *worker = &_workers[workerIndex];
     pthread_mutex_lock(&worker->mutex);
     worker->currentBlock = code;

@@ -23,6 +23,7 @@ import Foundation
 
 @objc class Bootstrap: NSObject {
     var semaphore: DispatchSemaphore?
+    private var isBootstrapping = false
 #if !JAILBREAK_ENV
     let rootPath: String = "\(NSHomeDirectory())/Documents"
 #else
@@ -95,8 +96,12 @@ import Foundation
         }
     }
     
+
     @objc func bootstrap() {
+        if isBootstrapping { return }
+        isBootstrapping = true
         print("[*] checking upon nyxian bootstrap")
+
         
         LDEPthreadDispatch {
             // Bootstrap migration
@@ -222,6 +227,7 @@ import Foundation
             }
             
             print("[*] done")
+            self.isBootstrapping = false
         }
     }
     

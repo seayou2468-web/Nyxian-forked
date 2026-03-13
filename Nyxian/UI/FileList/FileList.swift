@@ -191,7 +191,7 @@ import UniformTypeIdentifiers
             for path in self.selectedPaths {
                 let fileUrl = URL(fileURLWithPath: path)
                 if ((try? FileManager.default.removeItem(at: fileUrl)) != nil), let project = self.project {
-                    let database: DebugDatabase = DebugDatabase.getDatabase(ofPath: "\(project.cachePath!))/debug.json")
+                    let database: DebugDatabase = DebugDatabase.getDatabase(ofPath: "\(project.cachePath!)/debug.json")
                     NotificationCenter.default.post(name: Notification.Name("FileListAct"), object: ["close", fileUrl.path])
                     database.removeFileDebug(ofPath: fileUrl.path)
                     database.saveDatabase(toPath: "\(project.cachePath!)/debug.json")
@@ -446,7 +446,7 @@ import UniformTypeIdentifiers
                 let entry = self.entries[indexPath.row]
                 let fileUrl: URL = URL(fileURLWithPath: "\(self.path)/\(entry.name)")
                 if ((try? FileManager.default.removeItem(at: fileUrl)) != nil), let project = self.project {
-                    let database: DebugDatabase = DebugDatabase.getDatabase(ofPath: "\(project.cachePath!))/debug.json")
+                    let database: DebugDatabase = DebugDatabase.getDatabase(ofPath: "\(project.cachePath!)/debug.json")
                     NotificationCenter.default.post(name: Notification.Name("FileListAct"), object: ["close",fileUrl.path])
                     database.removeFileDebug(ofPath: fileUrl.path)
                     database.saveDatabase(toPath: "\(project.cachePath!)/debug.json")
