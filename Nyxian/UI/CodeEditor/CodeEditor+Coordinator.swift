@@ -52,7 +52,6 @@ class Coordinator: NSObject, TextViewDelegate {
         }
     }
     
-    @objc
     @objc func typecheckCode() {
         guard let textView = self.parent?.textView else { return }
         let text = textView.text
@@ -73,18 +72,6 @@ class Coordinator: NSObject, TextViewDelegate {
                 self.isProcessing = false
                 self.updateDiag()
             }
-        }
-    }
-
-            guard let parent = self.parent else { return }
-            guard let server = parent.synpushServer else { return }
-
-            parent.project?.projectConfig.reloadIfNeeded()
-            let flags: [String] = parent.isReadOnly ? NXProjectConfig.sdkCompilerFlags() as! [String] : parent.project?.projectConfig.compilerFlags as! [String]
-            
-            server.reparseFile(self.parent?.textView.text, withArgs: flags)
-            self.diag = self.parent?.synpushServer?.getDiagnostics() ?? []
-            self.updateDiag()
         }
     }
     
