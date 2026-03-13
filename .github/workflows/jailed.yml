@@ -37,8 +37,8 @@ jobs:
       - name: Install Theos
         if: steps.cache-theos.outputs.cache-hit != 'true'
         run: |
-          set -e
-          bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
+          git clone --recursive https://github.com/theos/theos.git ~/theos
+
 
       - name: Setup SDK
         run: |
