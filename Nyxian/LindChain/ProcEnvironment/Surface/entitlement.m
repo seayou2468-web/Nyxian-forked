@@ -97,7 +97,7 @@ ksurface_return_t entitlement_token_consume(ksurface_proc_t *consumer,
     ksurface_proc_t *issuer = NULL;
     ksurface_return_t ksr = proc_for_pid(token->blob.issuer_pid, &issuer);
     
-    if(ksr != KERN_SUCCESS)
+    if(ksr != SURFACE_SUCCESS)
     {
         return SURFACE_DENIED;
     }

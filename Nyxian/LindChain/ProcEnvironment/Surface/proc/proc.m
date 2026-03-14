@@ -50,7 +50,7 @@ DEFINE_KVOBJECT_MAIN_EVENT_HANDLER(proc)
             proc->bsd.kp_proc.p_priority = PUSER;
             proc->bsd.kp_proc.p_usrpri = PUSER;
             proc->bsd.kp_eproc.e_tdev = -1;
-            proc->bsd.kp_eproc.e_flag = 2;
+            proc->bsd.kp_eproc.e_flag = EPROC_SLEADER;
             proc->bsd.kp_proc.p_stat = SRUN;
             proc->bsd.kp_proc.p_flag = P_LP64 | P_EXEC;
             proc->nyx.ret = 0;
