@@ -7,13 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		6C3F65AB91A14D8BB51E469C /* mach_vm.m in Sources */ = {isa = PBXBuildFile; fileRef = 403D56BF44DF430A81523DB2 /* mach_vm.m */; };
 
-		205E89DEED9E4E999E0B32F8 /* ProcessMonitorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8F1B965915A4533A9D2395F /* ProcessMonitorViewController.swift */; };
 
-		1EEF94113C8F438FB72FB280 /* mach_vm.m in Sources */ = {isa = PBXBuildFile; fileRef = 403D56BF44DF430A81523DB2 /* mach_vm.m */; };
 
-		9D307894EF874C468D0A6340 /* ProcessMonitorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8F1B965915A4533A9D2395F /* ProcessMonitorViewController.swift */; };
 
 		793A7E502EB5996A0044418E /* SwiftTerm in Frameworks */ = {isa = PBXBuildFile; productRef = 793A7E4F2EB5996A0044418E /* SwiftTerm */; };
 		793FCD242E6730740011B3F5 /* libarchive.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 79BF9A8E2E62BA7D00C60D4C /* libarchive.tbd */; };
@@ -147,8 +143,6 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				LindChain/JBSupport/tshelper,
-				LindChain/ProcEnvironment/Surface/sys/compat/mach_vm.m,
-				UI/Settings/ProcessMonitorViewController.swift,
 			);
 			target = AF9916D82DC8C42200DDF895 /* Nyxian */;
 		};
@@ -161,9 +155,6 @@
 			);
 
 			membershipExceptions = (
-				UI/Settings/ProcessMonitorViewController.swift,
-				LindChain/ProcEnvironment/Surface/sys/compat/mach_vm.m,
-				LindChain/ProcEnvironment/Surface/sys/compat/mach_vm.h,
 			);
 			target = 79A3A9382EDDABAE00C0342E /* ServiceKit */;
 		};
@@ -283,8 +274,6 @@
 				UI/Settings/CertificateManagement.swift,
 				UI/Settings/CertificateViewController.swift,
 				UI/Settings/KernelLogViewController.swift,
-				LindChain/ProcEnvironment/Surface/sys/compat/mach_vm.m,
-				UI/Settings/ProcessMonitorViewController.swift,
 			);
 			target = 79AF51072F1CBD110055004A /* NyxianForJB */;
 		};
@@ -707,8 +696,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-							205E89DEED9E4E999E0B32F8 /* ProcessMonitorViewController.swift in Sources */,
-							6C3F65AB91A14D8BB51E469C /* mach_vm.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -723,8 +710,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-							9D307894EF874C468D0A6340 /* ProcessMonitorViewController.swift in Sources */,
-							1EEF94113C8F438FB72FB280 /* mach_vm.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
