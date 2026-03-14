@@ -15,23 +15,27 @@ jobs:
     runs-on: macos-26
 
     steps:
+      # 1. ソースコードチェックアウト
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           submodules: recursive
 
+      # 2. 依存ツールのインストール
       - name: Install Dependencies
         run: |
           set -e
           brew install ldid dpkg libarchive curl
 
+      # 3. Theos キャッシュ
       - name: Cache Theos
         id: cache-theos
         uses: actions/cache@v4
         with:
           path: ~/theos
-          key: theos-${{ runner.os }}-v2
+          key: theos-${{ runner.os }}-v3
 
+      # 4. Theos と SDK のインストール
       - name: Install Theos & SDKs
         if: steps.cache-theos.outputs.cache-hit != 'true'
         run: |
@@ -41,36 +45,43 @@ jobs:
           git clone --depth=1 https://github.com/theos/theos.git "$THEOS_DIR"
           mkdir -pv "$THEOS_DIR/sdks"
 
-          # SDK 一括ダウンロード
-          declare -A sdks=(
-            ["iPhoneOS9.3"]="https://github.com/theos/sdks/releases/download/master-146e41f/iPhoneOS9.3.sdk.tar.xz"
-            ["iPhoneOS10.3"]="https://github.com/theos/sdks/releases/download/master-146e41f/iPhoneOS10.3.sdk.tar.xz"
-            ["iPhoneOS11.4"]="https://github.com/theos/sdks/releases/download/master-146e41f/iPhoneOS11.4.sdk.tar.xz"
-            ["iPhoneOS12.4"]="https://github.com/theos/sdks/releases/download/master-146e41f/iPhoneOS12.4.sdk.tar.xz"
-            ["iPhoneOS13.7"]="https://github.com/theos/sdks/releases/download/master-146e41f/iPhoneOS13.7.sdk.tar.xz"
-            ["iPhoneOS14.5"]="https://github.com/theos/sdks/releases/download/master-146e41f/iPhoneOS14.5.sdk.tar.xz"
-            ["iPhoneOS15.6"]="https://github.com/theos/sdks/releases/download/master-146e41f/iPhoneOS15.6.sdk.tar.xz"
-            ["iPhoneOS16.5"]="https://github.com/theos/sdks/releases/download/master-146e41f/iPhoneOS16.5.sdk.tar.xz"
-            ["AppleTVOS10.2"]="https://github.com/theos/sdks/releases/download/master-146e41f/AppleTVOS10.2.sdk.tar.xz"
-            ["AppleTVOS11.4"]="https://github.com/theos/sdks/releases/download/master-146e41f/AppleTVOS11.4.sdk.tar.xz"
-            ["AppleTVOS12.4"]="https://github.com/theos/sdks/releases/download/master-146e41f/AppleTVOS12.4.sdk.tar.xz"
+          # SDK 一括ダウンロード（文字列リスト方式）
+          sdks_list=(
+            "iPhoneOS9.3 https://github.com/theos/sdks/releases/download/master-146e41f/iPhoneOS9.3.sdk.tar.xz"
+            "iPhoneOS10.3 https://github.com/theos/sdks/releases/download/master-146e41f/iPhoneOS10.3.sdk.tar.xz"
+            "iPhoneOS11.4 https://github.com/theos/sdks/releases/download/master-146e41f/iPhoneOS11.4.sdk.tar.xz"
+            "iPhoneOS12.4 https://github.com/theos/sdks/releases/download/master-146e41f/iPhoneOS12.4.sdk.tar.xz"
+            "iPhoneOS13.7 https://github.com/theos/sdks/releases/download/master-146e41f/iPhoneOS13.7.sdk.tar.xz"
+            "iPhoneOS14.5 https://github.com/theos/sdks/releases/download/master-146e41f/iPhoneOS14.5.sdk.tar.xz"
+            "iPhoneOS15.6 https://github.com/theos/sdks/releases/download/master-146e41f/iPhoneOS15.6.sdk.tar.xz"
+            "iPhoneOS16.5 https://github.com/theos/sdks/releases/download/master-146e41f/iPhoneOS16.5.sdk.tar.xz"
+            "AppleTVOS10.2 https://github.com/theos/sdks/releases/download/master-146e41f/AppleTVOS10.2.sdk.tar.xz"
+            "AppleTVOS11.4 https://github.com/theos/sdks/releases/download/master-146e41f/AppleTVOS11.4.sdk.tar.xz"
+            "AppleTVOS12.4 https://github.com/theos/sdks/releases/download/master-146e41f/AppleTVOS12.4.sdk.tar.xz"
           )
 
-          for sdk in "${!sdks[@]}"; do
-            url="${sdks[$sdk]}"
-            if [[ -d "$THEOS_DIR/sdks/$sdk.sdk" ]]; then
-              echo "[*] $sdk already installed, skipping..."
+          for entry in "${sdks_list[@]}"; do
+            sdk_name=$(echo $entry | cut -d' ' -f1)
+            sdk_url=$(echo $entry | cut -d' ' -f2)
+            sdk_path="$THEOS_DIR/sdks/$sdk_name.sdk"
+            if [[ -d "$sdk_path" ]]; then
+              echo "[*] $sdk_name already installed, skipping..."
             else
-              echo "[*] Downloading $sdk..."
-              curl -L "$url" | tar -xJv -C "$THEOS_DIR/sdks"
+              echo "[*] Downloading $sdk_name..."
+              curl -L "$sdk_url" | tar -xJv -C "$THEOS_DIR/sdks"
             fi
           done
 
+      # 5. 最新 SDK 自動検出
       - name: Set SDK Path
         run: |
-          export THEOS_PLATFORM_SDK_ROOT=$HOME/theos/sdks/iPhoneOS16.5.sdk
+          set -e
+          LATEST_SDK=$(ls ~/theos/sdks | grep iPhoneOS | sort -V | tail -n 1)
+          export THEOS_PLATFORM_SDK_ROOT="$HOME/theos/sdks/$LATEST_SDK"
           echo "THEOS_PLATFORM_SDK_ROOT=$THEOS_PLATFORM_SDK_ROOT" >> $GITHUB_ENV
-          
+          echo "[*] Using SDK: $LATEST_SDK"
+
+      # 6. ビルド成果物キャッシュ
       - name: Cache Build Artifacts
         id: cache-artifacts
         uses: actions/cache@v4
@@ -82,17 +93,20 @@ jobs:
             Nyxian/LindChain/JBSupport/tshelper
           key: build-artifacts-${{ runner.os }}-${{ hashFiles('Makefile', 'LLVM-On-iOS/Makefile', 'libroot/Makefile', 'TrollStore/Makefile') }}
 
+      # 7. Theos 環境設定
       - name: Setup Environment
         run: |
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
           echo "PATH=$HOME/theos/bin:$PATH" >> $GITHUB_ENV
 
+      # 8. Jailed ビルド
       - name: Build Jailed
         timeout-minutes: 1200
         run: |
           set -e
           make jailed
 
+      # 9. 成果物アップロード
       - name: Upload Jailed
         uses: actions/upload-artifact@v4
         with:
