@@ -1,0 +1,15 @@
+/app/build_test/CMakeFiles/prepare_lindchain.dir
+/app/build_test/CMakeFiles/jailed.dir
+/app/build_test/CMakeFiles/rootless.dir
+/app/build_test/CMakeFiles/edit_cache.dir
+/app/build_test/CMakeFiles/rebuild_cache.dir
+/app/build_test/cmake/libroot/CMakeFiles/libroot.dir
+/app/build_test/cmake/libroot/CMakeFiles/edit_cache.dir
+/app/build_test/cmake/libroot/CMakeFiles/rebuild_cache.dir
+/app/build_test/cmake/LLVM-On-iOS/CMakeFiles/llvm_project.dir
+/app/build_test/cmake/LLVM-On-iOS/CMakeFiles/llvm_frameworks.dir
+/app/build_test/cmake/LLVM-On-iOS/CMakeFiles/edit_cache.dir
+/app/build_test/cmake/LLVM-On-iOS/CMakeFiles/rebuild_cache.dir
+/app/build_test/cmake/TrollStore/CMakeFiles/trollstore_components.dir
+/app/build_test/cmake/TrollStore/CMakeFiles/edit_cache.dir
+/app/build_test/cmake/TrollStore/CMakeFiles/rebuild_cache.dir

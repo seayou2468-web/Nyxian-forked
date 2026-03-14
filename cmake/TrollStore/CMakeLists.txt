@@ -4,13 +4,16 @@ project(TrollStore NONE)
 set(TS_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../TrollStore")
 set(TS_BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}/_build")
 
+find_program(MAKE_EXE NAMES make gmake REQUIRED)
+
 add_custom_command(
     OUTPUT "${TS_BUILD_DIR}/tshelper"
-    COMMAND ${CMAKE_MAKE_PROGRAM} pre_build
-    COMMAND ${CMAKE_MAKE_PROGRAM} make_fastPathSign MAKECMDGOALS=
-    COMMAND ${CMAKE_MAKE_PROGRAM} make_roothelper MAKECMDGOALS=
-    COMMAND ${CMAKE_MAKE_PROGRAM} make_trollstore MAKECMDGOALS=
-    COMMAND ${CMAKE_MAKE_PROGRAM} make_trollhelper_embedded MAKECMDGOALS=
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${TS_BUILD_DIR}"
+    COMMAND ${MAKE_EXE} pre_build
+    COMMAND ${MAKE_EXE} make_fastPathSign MAKECMDGOALS=
+    COMMAND ${MAKE_EXE} make_roothelper MAKECMDGOALS=
+    COMMAND ${MAKE_EXE} make_trollstore MAKECMDGOALS=
+    COMMAND ${MAKE_EXE} make_trollhelper_embedded MAKECMDGOALS=
     COMMAND cp RootHelper/.theos/obj/trollstorehelper "${TS_BUILD_DIR}/tshelper"
     WORKING_DIRECTORY "${TS_SRC_DIR}"
     COMMENT "Building TrollStore components using make"

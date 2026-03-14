@@ -1,0 +1,46 @@
+{
+	"sources" :
+	[
+		{
+			"file" : "/app/build_test/cmake/LLVM-On-iOS/CMakeFiles/llvm_project"
+		},
+		{
+			"file" : "/app/build_test/cmake/LLVM-On-iOS/CMakeFiles/llvm_project.rule"
+		},
+		{
+			"file" : "/app/build_test/cmake/LLVM-On-iOS/CMakeFiles/llvm_project-complete.rule"
+		},
+		{
+			"file" : "/app/build_test/cmake/LLVM-On-iOS/llvm-stamp/llvm_project-build.rule"
+		},
+		{
+			"file" : "/app/build_test/cmake/LLVM-On-iOS/llvm-stamp/llvm_project-configure.rule"
+		},
+		{
+			"file" : "/app/build_test/cmake/LLVM-On-iOS/llvm-stamp/llvm_project-download.rule"
+		},
+		{
+			"file" : "/app/build_test/cmake/LLVM-On-iOS/llvm-stamp/llvm_project-install.rule"
+		},
+		{
+			"file" : "/app/build_test/cmake/LLVM-On-iOS/llvm-stamp/llvm_project-mkdir.rule"
+		},
+		{
+			"file" : "/app/build_test/cmake/LLVM-On-iOS/llvm-stamp/llvm_project-patch.rule"
+		},
+		{
+			"file" : "/app/build_test/cmake/LLVM-On-iOS/llvm-stamp/llvm_project-patch_cache.rule"
+		},
+		{
+			"file" : "/app/build_test/cmake/LLVM-On-iOS/llvm-stamp/llvm_project-update.rule"
+		}
+	],
+	"target" :
+	{
+		"labels" :
+		[
+			"llvm_project"
+		],
+		"name" : "llvm_project"
+	}
+}

@@ -3,6 +3,16 @@ project(libroot LANGUAGES C)
 
 set(CMAKE_C_STANDARD 11)
 
+# Set iOS sysroot and architecture if not already set
+if(APPLE)
+    if(NOT CMAKE_OSX_SYSROOT)
+        set(CMAKE_OSX_SYSROOT iphoneos)
+    endif()
+    if(NOT CMAKE_OSX_ARCHITECTURES)
+        set(CMAKE_OSX_ARCHITECTURES arm64)
+    endif()
+endif()
+
 set(LIBROOT_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../libroot")
 file(GLOB SRC_FILES "${LIBROOT_SRC_DIR}/src/*.c")
 

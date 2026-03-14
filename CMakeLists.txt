@@ -1,6 +1,16 @@
 cmake_minimum_required(VERSION 3.20)
 project(Nyxian LANGUAGES C)
 
+# Set iOS defaults for the entire project
+if(APPLE)
+    if(NOT CMAKE_OSX_SYSROOT)
+        set(CMAKE_OSX_SYSROOT iphoneos)
+    endif()
+    if(NOT CMAKE_OSX_ARCHITECTURES)
+        set(CMAKE_OSX_ARCHITECTURES arm64)
+    endif()
+endif()
+
 # Set global version from Config.xcconfig (simplified parsing)
 file(READ "Config.xcconfig" XCCONFIG_CONTENTS)
 string(REGEX MATCH "VERSION = ([0-9.]+)" _ ${XCCONFIG_CONTENTS})
@@ -45,6 +55,7 @@ add_custom_target(jailed ALL
             archive
             CODE_SIGN_IDENTITY=""
             CODE_SIGNING_REQUIRED=NO
+            CODE_SIGN_IDENITY_EXEMPT=YES
             CODE_SIGNING_ALLOWED=NO
     COMMAND mkdir -p "${CMAKE_CURRENT_BINARY_DIR}/Payload"
     COMMAND cp -r "${CMAKE_CURRENT_BINARY_DIR}/Nyxian.xcarchive/Products/Applications" "${CMAKE_CURRENT_BINARY_DIR}/Payload"
@@ -65,6 +76,7 @@ add_custom_target(rootless
             archive
             CODE_SIGN_IDENTITY=""
             CODE_SIGNING_REQUIRED=NO
+            CODE_SIGN_IDENITY_EXEMPT=YES
             CODE_SIGNING_ALLOWED=NO
     COMMAND ldid -Sent/nyxianforjb.xml "${CMAKE_CURRENT_BINARY_DIR}/NyxianForJB.xcarchive/Products/Applications/NyxianForJB.app"
     COMMAND ldid -Sent/tshelper.xml "${CMAKE_CURRENT_BINARY_DIR}/NyxianForJB.xcarchive/Products/Applications/NyxianForJB.app/tshelper"

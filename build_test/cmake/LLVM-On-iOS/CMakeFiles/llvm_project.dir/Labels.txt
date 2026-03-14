@@ -1,0 +1,14 @@
+# Target labels
+ llvm_project
+# Source files and their labels
+/app/build_test/cmake/LLVM-On-iOS/CMakeFiles/llvm_project
+/app/build_test/cmake/LLVM-On-iOS/CMakeFiles/llvm_project.rule
+/app/build_test/cmake/LLVM-On-iOS/CMakeFiles/llvm_project-complete.rule
+/app/build_test/cmake/LLVM-On-iOS/llvm-stamp/llvm_project-build.rule
+/app/build_test/cmake/LLVM-On-iOS/llvm-stamp/llvm_project-configure.rule
+/app/build_test/cmake/LLVM-On-iOS/llvm-stamp/llvm_project-download.rule
+/app/build_test/cmake/LLVM-On-iOS/llvm-stamp/llvm_project-install.rule
+/app/build_test/cmake/LLVM-On-iOS/llvm-stamp/llvm_project-mkdir.rule
+/app/build_test/cmake/LLVM-On-iOS/llvm-stamp/llvm_project-patch.rule
+/app/build_test/cmake/LLVM-On-iOS/llvm-stamp/llvm_project-patch_cache.rule
+/app/build_test/cmake/LLVM-On-iOS/llvm-stamp/llvm_project-update.rule
