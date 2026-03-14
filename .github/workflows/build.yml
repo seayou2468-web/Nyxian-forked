@@ -35,6 +35,7 @@ jobs:
       - name: Install Theos & SDKs
         if: steps.cache-theos.outputs.cache-hit != 'true'
         run: |
+          #!/bin/bash
           set -e
           THEOS_DIR="$HOME/theos"
           git clone --depth=1 https://github.com/theos/theos.git "$THEOS_DIR"
