@@ -81,10 +81,6 @@ jobs:
           echo "THEOS_PLATFORM_SDK_ROOT=$THEOS_PLATFORM_SDK_ROOT" >> $GITHUB_ENV
           echo "[*] Using SDK: $LATEST_SDK"
 
-      - name: Update Theos
-        run: |
-          set -e
-          $HOME/theos/bin/update-theos
 
       # 6. ビルド成果物キャッシュ
       - name: Cache Build Artifacts
@@ -104,6 +100,10 @@ jobs:
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
           echo "PATH=$HOME/theos/bin:$PATH" >> $GITHUB_ENV
 
+      - name: Update Theos
+        run: |
+          set -e
+          $HOME/theos/bin/update-theos
       # 8. Jailed ビルド
       - name: Build Jailed
         timeout-minutes: 1200
