@@ -7,14 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		FFA03E7BCDC94E97A584D267 /* mach_vm.m in Sources */ = {isa = PBXBuildFile; fileRef = 403D56BF44DF430A81523DB2 /* mach_vm.m */; };
-
-		ECA30B7DB15B40B8AC78D170 /* ProcessMonitorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8F1B965915A4533A9D2395F /* ProcessMonitorViewController.swift */; };
-
-		96948E1D89F14E9FBEBEC5E2 /* mach_vm.m in Sources */ = {isa = PBXBuildFile; fileRef = 403D56BF44DF430A81523DB2 /* mach_vm.m */; };
-
-		E56BFB735E2249DE897FFCD4 /* ProcessMonitorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8F1B965915A4533A9D2395F /* ProcessMonitorViewController.swift */; };
-
 		793A7E502EB5996A0044418E /* SwiftTerm in Frameworks */ = {isa = PBXBuildFile; productRef = 793A7E4F2EB5996A0044418E /* SwiftTerm */; };
 		793FCD242E6730740011B3F5 /* libarchive.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 79BF9A8E2E62BA7D00C60D4C /* libarchive.tbd */; };
 		795227872F45B52000D1C3CC /* LiveProcess.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 79BF97F72E6291EE00C60D4C /* LiveProcess.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -124,12 +116,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		4B34D5C2F45448109C4D7AC1 /* mach_vm.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = mach_vm.h; sourceTree = "<group>"; };
-
-		403D56BF44DF430A81523DB2 /* mach_vm.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = mach_vm.m; sourceTree = "<group>"; };
-
-		A8F1B965915A4533A9D2395F /* ProcessMonitorViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessMonitorViewController.swift; sourceTree = "<group>"; };
-
 		79277DC02EE8752800F18B30 /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
 		79277DC62EE8761000F18B30 /* version.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = version.sh; sourceTree = "<group>"; };
 		79281CBF2E3A44CA00E983C9 /* UniformTypeIdentifiers.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UniformTypeIdentifiers.framework; path = System/Library/Frameworks/UniformTypeIdentifiers.framework; sourceTree = SDKROOT; };
@@ -697,8 +683,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-							ECA30B7DB15B40B8AC78D170 /* ProcessMonitorViewController.swift in Sources */,
-							FFA03E7BCDC94E97A584D267 /* mach_vm.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -713,8 +697,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-							E56BFB735E2249DE897FFCD4 /* ProcessMonitorViewController.swift in Sources */,
-							96948E1D89F14E9FBEBEC5E2 /* mach_vm.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
