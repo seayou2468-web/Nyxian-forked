@@ -124,16 +124,16 @@
         self.detailTextLabel.text = bundleIdentifier;
         self.detailTextLabel.hidden = NO;
         self.detailBelowTitleConstraint.active = YES;
-        self.textCenterConstraint.active = false;
-        self.textCenterConstraintBox.active = true;
+        self.textCenterConstraint.active = NO;
+        self.textCenterConstraintBox.active = YES;
     }
     else
     {
         self.detailTextLabel.text = @"";
         self.detailTextLabel.hidden = YES;
         self.detailBelowTitleConstraint.active = NO;
-        self.textCenterConstraint.active = true;
-        self.textCenterConstraintBox.active = false;
+        self.textCenterConstraint.active = YES;
+        self.textCenterConstraintBox.active = NO;
     }
 
     if(showAppIcon)
@@ -148,11 +148,15 @@
     else
     {
         self.imageView.hidden = YES;
+        [NSLayoutConstraint deactivateConstraints:self.imageConstraints];
         self.leadingConstraintWImage.active = NO;
         self.leadingConstraintWHImage.active = YES;
         self.detailLeadingConstraintWImage.active = NO;
         self.detailLeadingConstraintWHImage.active = YES;
     }
+
+    [self setNeedsLayout];
+    [self layoutIfNeeded];
 }
 
 - (void)prepareForReuse
@@ -164,6 +168,18 @@
     self.accessoryType = UITableViewCellAccessoryNone;
     self.imageView.hidden = NO;
     self.detailTextLabel.hidden = NO;
+
+    // Explicitly deactivate all conditional constraints to avoid conflicts on reuse
+    [NSLayoutConstraint deactivateConstraints:@[
+        self.leadingConstraintWImage,
+        self.leadingConstraintWHImage,
+        self.detailLeadingConstraintWImage,
+        self.detailLeadingConstraintWHImage,
+        self.textCenterConstraint,
+        self.textCenterConstraintBox,
+        self.detailBelowTitleConstraint
+    ]];
+    [NSLayoutConstraint deactivateConstraints:self.imageConstraints];
 }
 
 + (NSString *)reuseIdentifier

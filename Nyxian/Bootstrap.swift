@@ -125,9 +125,11 @@ import Foundation
                 if !self.isBootstrapInstalled ||
                     self.bootstrapVersion != self.newestBootstrapVersion {
                     
-                    // "e need to clear the entire path if its not installed
-                    if !self.isBootstrapInstalled {
-                        print("[*] Bootstrap is not installed, clearing")
+                    print("[*] bootstrap version mismatch (local: \(self.bootstrapVersion), required: \(self.newestBootstrapVersion))")
+
+                    // If we are downgrading or have a significant version jump, it might be safer to clear
+                    if self.bootstrapVersion > self.newestBootstrapVersion || !self.isBootstrapInstalled {
+                        print("[*] perform clean bootstrap installation")
                         self.clearPath(path: "/")
                     }
                     

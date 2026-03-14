@@ -30,7 +30,7 @@ class SettingsViewController: UIThemedTableViewController {
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
 #if !JAILBREAK_ENV
         // To enable kernel logging entirely, change return value to 6!
-        return 6
+        return 7
 #else
         return 3
 #endif /* !JAILBREAK_ENV */
@@ -71,10 +71,14 @@ class SettingsViewController: UIThemedTableViewController {
             cell.textLabel?.text = "Certificate"
             break
         case 4:
+            cell.imageView?.image = UIImage(systemName: "cpu")
+            cell.textLabel?.text = "Process Monitor"
+            break
+        case 5:
             cell.imageView?.image = UIImage(systemName: "ant.fill")
             cell.textLabel?.text = "Kernel Log"
             break
-        case 5:
+        case 6:
             cell.imageView?.image = UIImage(systemName: "person.3.fill")
             cell.textLabel?.text = "Credits"
             break
@@ -123,8 +127,10 @@ class SettingsViewController: UIThemedTableViewController {
             case 3:
                 return CertificateController(style: .insetGrouped)
             case 4:
-                return KernelLogViewController()
+                return ProcessMonitorViewController()
             case 5:
+                return KernelLogViewController()
+            case 6:
                 return CreditsViewController(style: .insetGrouped)
 #else
             case 0:

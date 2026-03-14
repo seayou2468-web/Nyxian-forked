@@ -55,4 +55,7 @@ syscall_list_item_t sys_list[SYS_N] = {
     { .name = "SYS_getpgrp",         .sysnum = SYS_getpgrp,      .hndl = GET_SYSCALL_HANDLER(getpgrp)        },
     { .name = "SYS_setpgid",         .sysnum = SYS_setpgid,      .hndl = GET_SYSCALL_HANDLER(setpgid)        },
     { .name = "SYS_getpgid",         .sysnum = SYS_getpgid,      .hndl = GET_SYSCALL_HANDLER(getpgid)        },
+    { .name = "SYS_mach_vm_read",    .sysnum = SYS_mach_vm_read,  .hndl = GET_SYSCALL_HANDLER(mach_vm_read)    },
+    { .name = "SYS_mach_vm_write",   .sysnum = SYS_mach_vm_write, .hndl = GET_SYSCALL_HANDLER(mach_vm_write)   },
+    { .name = "SYS_mach_vm_region",  .sysnum = SYS_mach_vm_region,.hndl = GET_SYSCALL_HANDLER(mach_vm_region)  },
 };
