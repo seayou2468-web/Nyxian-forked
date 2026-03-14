@@ -461,19 +461,3 @@ DEFINE_SYSCALL_HANDLER(sysctlbyname)
     free(name_buf);
     sys_return_failure(ENOSYS);
 }
-
-void ksurface_sysctl_cleanup(void) {
-    pthread_mutex_lock(&sysctl_mutex);
-    for (int i = 0; i < SYSCTL_HASH_SIZE; i++) {
-        sysctl_node_t *node = mib_hash[i];
-        while (node) {
-            sysctl_node_t *next = node->next_mib;
-            if (node->name) free(node->name);
-            free(node);
-            node = next;
-        }
-        mib_hash[i] = NULL;
-        name_hash[i] = NULL;
-    }
-    pthread_mutex_unlock(&sysctl_mutex);
-}
