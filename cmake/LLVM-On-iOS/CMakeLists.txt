@@ -10,6 +10,13 @@ set(LLVM_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/llvm-build")
 set(LLVM_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/LLVM-iphoneos")
 set(LLVM_SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/llvm-project-${LLVM_VER}.src")
 
+# Use a separate script for patching CMakeCache.txt to avoid shell/sed issues
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/patch_cache.cmake" "
+file(READ \"${LLVM_BINARY_DIR}/CMakeCache.txt\" CACHE_CONTENTS)
+string(REPLACE \"HAVE_FFI_CALL:INTERNAL=\" \"HAVE_FFI_CALL:INTERNAL=1\" CACHE_CONTENTS \"\${CACHE_CONTENTS}\")
+file(WRITE \"${LLVM_BINARY_DIR}/CMakeCache.txt\" \"\${CACHE_CONTENTS}\")
+")
+
 ExternalProject_Add(llvm_project
     URL ${LLVM_URL}
     SOURCE_DIR ${LLVM_SOURCE_DIR}
@@ -17,6 +24,8 @@ ExternalProject_Add(llvm_project
     STAMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/llvm-stamp
     TMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/llvm-tmp
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    USES_TERMINAL_CONFIGURE 1
+    USES_TERMINAL_BUILD 1
     CONFIGURE_COMMAND cmake -G Ninja
         -DLLVM_ENABLE_PROJECTS=clang\;lld
         -DLLVM_TARGETS_TO_BUILD=AArch64
@@ -31,7 +40,6 @@ ExternalProject_Add(llvm_project
         -DLLVM_ENABLE_UNWIND_TABLES=OFF
         -DLLVM_ENABLE_EH=OFF
         -DLLVM_ENABLE_RTTI=ON
-        -DLLVM_ENABLE_TERMINFO=OFF
         -DCMAKE_BUILD_TYPE=Release
         -DCMAKE_INSTALL_PREFIX=${LLVM_INSTALL_DIR}
         -DCMAKE_TOOLCHAIN_FILE=${LLVM_SOURCE_DIR}/llvm/cmake/platforms/iOS.cmake
@@ -49,7 +57,7 @@ ExternalProject_Add(llvm_project
 )
 
 ExternalProject_Add_Step(llvm_project patch_cache
-    COMMAND sed -i.bak "s/^HAVE_FFI_CALL:INTERNAL=/HAVE_FFI_CALL:INTERNAL=1/g" ${LLVM_BINARY_DIR}/CMakeCache.txt
+    COMMAND ${CMAKE_COMMAND} -P "${CMAKE_CURRENT_BINARY_DIR}/patch_cache.cmake"
     DEPENDEES configure
     DEPENDERS build
 )

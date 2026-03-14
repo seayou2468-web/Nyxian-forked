@@ -27,26 +27,46 @@ set(NXBUILD ${CMAKE_MATCH_1})
 
 # Subdirectories
 add_subdirectory(cmake/libroot)
-add_subdirectory(cmake/LLVM-On-iOS)
 add_subdirectory(cmake/TrollStore)
+
+# Check if LLVM frameworks already exist
+set(LINDCHAIN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Nyxian/LindChain")
+set(JB_SUPPORT_DIR "${LINDCHAIN_DIR}/JBSupport")
+
+if(EXISTS "${LINDCHAIN_DIR}/LLVM.xcframework" AND EXISTS "${LINDCHAIN_DIR}/Clang.xcframework")
+    message(STATUS "LLVM frameworks already exist in ${LINDCHAIN_DIR}. Skipping LLVM build.")
+    set(BUILD_LLVM OFF)
+else()
+    message(STATUS "LLVM frameworks NOT found. Adding LLVM build subdirectory.")
+    add_subdirectory(cmake/LLVM-On-iOS)
+    set(BUILD_LLVM ON)
+endif()
 
 # Main App configuration
 set(SCHEME "Nyxian")
 set(BUNDLE_ID "com.cr4zy.nyxian")
 
-# Directories for artifacts
-set(LINDCHAIN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Nyxian/LindChain")
-set(JB_SUPPORT_DIR "${LINDCHAIN_DIR}/JBSupport")
-
 # Target for copying artifacts to LindChain
-add_custom_target(prepare_lindchain ALL
+set(PREPARE_COMMANDS
     COMMAND ${CMAKE_COMMAND} -E make_directory "${JB_SUPPORT_DIR}"
     COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:libroot>" "${JB_SUPPORT_DIR}/libroot.a"
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/libroot/src/libroot.h" "${JB_SUPPORT_DIR}/libroot.h"
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_BINARY_DIR}/cmake/TrollStore/_build/tshelper" "${JB_SUPPORT_DIR}/tshelper"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_BINARY_DIR}/cmake/LLVM-On-iOS/LLVM.xcframework" "${LINDCHAIN_DIR}/LLVM.xcframework"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_BINARY_DIR}/cmake/LLVM-On-iOS/Clang.xcframework" "${LINDCHAIN_DIR}/Clang.xcframework"
-    DEPENDS libroot llvm_frameworks trollstore_components
+)
+
+set(PREPARE_DEPENDS libroot trollstore_components)
+
+if(BUILD_LLVM)
+    list(APPEND PREPARE_COMMANDS
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_BINARY_DIR}/cmake/LLVM-On-iOS/LLVM.xcframework" "${LINDCHAIN_DIR}/LLVM.xcframework"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_BINARY_DIR}/cmake/LLVM-On-iOS/Clang.xcframework" "${LINDCHAIN_DIR}/Clang.xcframework"
+    )
+    list(APPEND PREPARE_DEPENDS llvm_frameworks)
+endif()
+
+add_custom_target(prepare_lindchain ALL
+    ${PREPARE_COMMANDS}
+    DEPENDS ${PREPARE_DEPENDS}
 )
 
 # Main build and package target
