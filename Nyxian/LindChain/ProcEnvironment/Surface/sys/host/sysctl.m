@@ -27,7 +27,6 @@
 #import <LindChain/ProcEnvironment/Surface/obj/kvobject.h>
 #import <LindChain/ProcEnvironment/Utils/klog.h>
 #import <regex.h>
-#import <sys/sysctl.h>
 
 /* --- Utility Handlers --- */
 
