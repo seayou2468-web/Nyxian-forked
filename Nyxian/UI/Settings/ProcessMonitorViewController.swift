@@ -5,7 +5,6 @@
 import UIKit
 
 class ProcessMonitorViewController: UIThemedTableViewController {
-    var processes: [LDEProcess] = []
     var timer: Timer?
 
     override func viewDidLoad() {
@@ -18,9 +17,9 @@ class ProcessMonitorViewController: UIThemedTableViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        refreshProcesses()
+        self.tableView.reloadData()
         timer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
-            self?.refreshProcesses()
+            self?.tableView.reloadData()
         }
     }
 
@@ -30,25 +29,21 @@ class ProcessMonitorViewController: UIThemedTableViewController {
     }
 
     @objc func refreshProcesses() {
-        let allProcesses = LDEProcessManager.shared().processes.values
-        self.processes = Array(allProcesses).sorted { $0.pid < $1.pid }
         self.tableView.reloadData()
     }
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return processes.count
+        return LDEProcessManager.shared().processes.count
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let process = processes[indexPath.row]
+        let allKeys = Array(LDEProcessManager.shared().processes.keys).sorted { $0.intValue < $1.intValue }
+        let pidKey = allKeys[indexPath.row]
+        let process = LDEProcessManager.shared().processes[pidKey]!
+
         let cell = tableView.dequeueReusableCell(withIdentifier: NXProjectTableCell.reuseIdentifier(), for: indexPath) as! NXProjectTableCell
 
-        let status: String
-        if process.isSuspended {
-            status = "Suspended"
-        } else {
-            status = "Running"
-        }
+        let status: String = process.isSuspended ? "Suspended" : "Running"
 
         cell.configure(withDisplayName: process.displayName ?? "Unknown",
                        withBundleIdentifier: "PID: \(process.pid) | \(status)",
@@ -61,25 +56,30 @@ class ProcessMonitorViewController: UIThemedTableViewController {
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        let process = processes[indexPath.row]
 
-        let alert = UIAlertController(title: "Process: \(process.displayName ?? "Unknown")", message: "PID: \(process.pid)\\nBundle: \(process.bundleIdentifier ?? "N/A")", preferredStyle: .actionSheet)
+        let allKeys = Array(LDEProcessManager.shared().processes.keys).sorted { $0.intValue < $1.intValue }
+        let pidKey = allKeys[indexPath.row]
+        let process = LDEProcessManager.shared().processes[pidKey]!
+
+        let alert = UIAlertController(title: "Process: \(process.displayName ?? "Unknown")",
+                                      message: "PID: \(process.pid)\\nBundle: \(process.bundleIdentifier ?? "N/A")",
+                                      preferredStyle: .actionSheet)
 
         if process.isSuspended {
             alert.addAction(UIAlertAction(title: "Resume", style: .default) { _ in
                 process.resume()
-                self.refreshProcesses()
+                self.tableView.reloadData()
             })
         } else {
             alert.addAction(UIAlertAction(title: "Suspend", style: .default) { _ in
                 process.suspend()
-                self.refreshProcesses()
+                self.tableView.reloadData()
             })
         }
 
         alert.addAction(UIAlertAction(title: "Terminate", style: .destructive) { _ in
             process.terminate()
-            self.refreshProcesses()
+            self.tableView.reloadData()
         })
 
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
