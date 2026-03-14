@@ -1,21 +1,24 @@
-#ifndef BSD_TYPES_H
-#define BSD_TYPES_H
+#ifndef DARWIN_BSD_TYPES_H
+#define DARWIN_BSD_TYPES_H
 
 #include <sys/types.h>
 #include <sys/time.h>
 
-/* Minimal definitions for kinfo_proc and friends to be independent of system headers */
+/*
+ * Redefining Darwin structures with 'darwin_' prefix to avoid conflicts
+ * with iOS SDK headers while maintaining binary compatibility.
+ */
 
-struct extern_proc {
+struct darwin_extern_proc {
     union {
         struct {
-            struct proc *__p_forw;
-            struct proc *__p_back;
+            void *__p_forw;
+            void *__p_back;
         } p_stch;
         struct timeval __p_starttime;
     } p_un;
-    struct vnode *p_vnode;
-    struct proc *p_pptr;
+    void *p_vnode;
+    void *p_pptr;
     pid_t p_pid;
     pid_t p_oppid;
     int p_stat;
@@ -44,16 +47,16 @@ struct extern_proc {
     void *p_pad19;
 };
 
-struct _ucred {
+struct darwin_ucred {
     int32_t cr_ref;
     uid_t cr_uid;
     short cr_ngroups;
     gid_t cr_groups[16];
 };
 
-struct _pcred {
+struct darwin_pcred {
     char pc_pad[32];
-    struct _ucred *pc_ucred;
+    struct darwin_ucred *pc_ucred;
     uid_t p_ruid;
     uid_t p_svuid;
     gid_t p_rgid;
@@ -61,11 +64,11 @@ struct _pcred {
     int p_refcnt;
 };
 
-struct eproc {
-    struct proc *e_paddr;
-    struct session *e_sess;
-    struct _pcred e_pcred;
-    struct _ucred e_ucred;
+struct darwin_eproc {
+    void *e_paddr;
+    void *e_sess;
+    struct darwin_pcred e_pcred;
+    struct darwin_ucred e_ucred;
     struct {
         u_int vm_rssize;
         u_int vm_tsize;
@@ -77,7 +80,7 @@ struct eproc {
     short e_jobc;
     dev_t e_tdev;
     pid_t e_tpgid;
-    struct session *e_tsess;
+    void *e_tsess;
     char e_wmesg[8];
     u_int e_xsize;
     short e_xrssize;
@@ -88,9 +91,9 @@ struct eproc {
     int32_t e_spare[4];
 };
 
-struct kinfo_proc {
-    struct extern_proc kp_proc;
-    struct eproc kp_eproc;
+struct darwin_kinfo_proc {
+    struct darwin_extern_proc kp_proc;
+    struct darwin_eproc kp_eproc;
 };
 
-#endif /* BSD_TYPES_H */
+#endif /* DARWIN_BSD_TYPES_H */

@@ -72,7 +72,7 @@
 typedef struct ksurface_proc ksurface_proc_t;
 typedef struct ksurface_proc ksurface_proc_snapshot_t;
 typedef struct kchildren ksurface_kproc_children_t;
-typedef struct kinfo_proc kinfo_proc_t;
+typedef struct darwin_kinfo_proc kinfo_proc_t;
 typedef struct knyx_proc knyx_proc_t;
 
 /// Nyxian process structure
