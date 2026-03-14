@@ -24,6 +24,36 @@
 
 #import <LindChain/ProcEnvironment/Surface/surface.h>
 
+/* --- sysctl request structure --- */
+typedef struct {
+    int name[20];
+    u_int namelen;
+    userspace_pointer_t oldp;
+    userspace_pointer_t oldlenp;
+    userspace_pointer_t newp;
+    size_t newlen;
+    errno_t err;
+    task_t task;
+    ksurface_proc_snapshot_t *proc_snapshot;
+} sysctl_req_t;
+
+/* --- sysctl handler function type --- */
+typedef int (*sysctl_fn_t)(sysctl_req_t *req);
+
+/* --- sysctl map entry structure --- */
+typedef struct {
+    int mib[20];
+    size_t mib_len;
+    sysctl_fn_t fn;
+} sysctl_map_entry_t;
+
+/* --- sysctl name map entry structure --- */
+typedef struct {
+    const char *name;
+    int mib[20];
+    size_t mib_len;
+} sysctl_name_map_entry_t;
+
 DEFINE_SYSCALL_HANDLER(sysctl);
 DEFINE_SYSCALL_HANDLER(sysctlbyname);
 
