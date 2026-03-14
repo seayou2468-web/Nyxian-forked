@@ -23,20 +23,47 @@ jobs:
       - name: Install Dependencies
         run: |
           set -e
-          brew install ldid dpkg libarchive
+          brew install ldid dpkg libarchive git curl make clang
 
       - name: Cache Theos
         id: cache-theos
         uses: actions/cache@v4
         with:
           path: ~/theos
-          key: theos-${{ runner.os }}-v1
+          key: theos-${{ runner.os }}-v2
 
-      - name: Install Theos
+      - name: Install Theos & SDKs
         if: steps.cache-theos.outputs.cache-hit != 'true'
         run: |
           set -e
-          bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
+          THEOS_DIR="$HOME/theos"
+          git clone --depth=1 https://github.com/theos/theos.git "$THEOS_DIR"
+          mkdir -pv "$THEOS_DIR/sdks"
+
+          # SDK 一括ダウンロード
+          declare -A sdks=(
+            ["iPhoneOS9.3"]="https://github.com/theos/sdks/releases/download/master-146e41f/iPhoneOS9.3.sdk.tar.xz"
+            ["iPhoneOS10.3"]="https://github.com/theos/sdks/releases/download/master-146e41f/iPhoneOS10.3.sdk.tar.xz"
+            ["iPhoneOS11.4"]="https://github.com/theos/sdks/releases/download/master-146e41f/iPhoneOS11.4.sdk.tar.xz"
+            ["iPhoneOS12.4"]="https://github.com/theos/sdks/releases/download/master-146e41f/iPhoneOS12.4.sdk.tar.xz"
+            ["iPhoneOS13.7"]="https://github.com/theos/sdks/releases/download/master-146e41f/iPhoneOS13.7.sdk.tar.xz"
+            ["iPhoneOS14.5"]="https://github.com/theos/sdks/releases/download/master-146e41f/iPhoneOS14.5.sdk.tar.xz"
+            ["iPhoneOS15.6"]="https://github.com/theos/sdks/releases/download/master-146e41f/iPhoneOS15.6.sdk.tar.xz"
+            ["iPhoneOS16.5"]="https://github.com/theos/sdks/releases/download/master-146e41f/iPhoneOS16.5.sdk.tar.xz"
+            ["AppleTVOS10.2"]="https://github.com/theos/sdks/releases/download/master-146e41f/AppleTVOS10.2.sdk.tar.xz"
+            ["AppleTVOS11.4"]="https://github.com/theos/sdks/releases/download/master-146e41f/AppleTVOS11.4.sdk.tar.xz"
+            ["AppleTVOS12.4"]="https://github.com/theos/sdks/releases/download/master-146e41f/AppleTVOS12.4.sdk.tar.xz"
+          )
+
+          for sdk in "${!sdks[@]}"; do
+            url="${sdks[$sdk]}"
+            if [[ -d "$THEOS_DIR/sdks/$sdk.sdk" ]]; then
+              echo "[*] $sdk already installed, skipping..."
+            else
+              echo "[*] Downloading $sdk..."
+              curl -L "$url" | tar -xJv -C "$THEOS_DIR/sdks"
+            fi
+          done
 
       - name: Cache Build Artifacts
         id: cache-artifacts
@@ -49,10 +76,9 @@ jobs:
             Nyxian/LindChain/JBSupport/tshelper
           key: build-artifacts-${{ runner.os }}-${{ hashFiles('Makefile', 'LLVM-On-iOS/Makefile', 'libroot/Makefile', 'TrollStore/Makefile') }}
 
-      - name: Setup
+      - name: Setup Environment
         run: |
-          set -e
-          echo "THEOS=~/theos" >> $GITHUB_ENV
+          echo "THEOS=$HOME/theos" >> $GITHUB_ENV
           echo "PATH=$HOME/theos/bin:$PATH" >> $GITHUB_ENV
 
       - name: Build Jailed
