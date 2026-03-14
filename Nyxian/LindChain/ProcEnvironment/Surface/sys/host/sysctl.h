@@ -107,6 +107,7 @@ typedef struct {
 /* --- Dynamic Registration API --- */
 void ksurface_sysctl_register(const int *mib, size_t mib_len, sysctl_fn_t fn);
 void ksurface_sysctl_register_by_name(const char *name, const int *mib, size_t mib_len, sysctl_fn_t fn);
+void ksurface_sysctl_cleanup(void);
 
 DEFINE_SYSCALL_HANDLER(sysctl);
 DEFINE_SYSCALL_HANDLER(sysctlbyname);

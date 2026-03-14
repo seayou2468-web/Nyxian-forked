@@ -47,6 +47,21 @@ void ksurface_sysctl_register(const int *mib, size_t mib_len, sysctl_fn_t fn) {
 
 void ksurface_sysctl_register_by_name(const char *name, const int *mib, size_t mib_len, sysctl_fn_t fn) {
     pthread_mutex_lock(&sysctl_mutex);
+
+    /* Check for duplicate */
+    sysctl_node_t *curr = dynamic_sysctls;
+    while (curr) {
+        if (mib_len == curr->mib_len && memcmp(mib, curr->mib, mib_len * sizeof(int)) == 0) {
+            pthread_mutex_unlock(&sysctl_mutex);
+            return;
+        }
+        if (name && curr->name && strcmp(name, curr->name) == 0) {
+            pthread_mutex_unlock(&sysctl_mutex);
+            return;
+        }
+        curr = curr->next;
+    }
+
     sysctl_node_t *node = malloc(sizeof(sysctl_node_t));
     if (node) {
         node->name = name ? strdup(name) : NULL;
@@ -85,8 +100,8 @@ int sysctl_handle_string(sysctl_req_t *req, const char *val) {
 }
 
 int sysctl_handle_int(sysctl_req_t *req, int *val_ptr) {
-    int val = *val_ptr;
     if (req->oldlenp) {
+        int val = *val_ptr;
         size_t len = sizeof(int);
         size_t oldlen = 0;
         if (!mach_syscall_copy_in(req->task, sizeof(size_t), &oldlen, req->oldlenp)) return -1;
@@ -194,8 +209,8 @@ int sysctl_kernproc(sysctl_req_t *req)
 int sysctl_kern_proc_args(sysctl_req_t *req) {
     if (req->namelen != 3) { req->err = EINVAL; return -1; }
     pid_t pid = req->name[2];
-    ksurface_proc_t *proc = proc_lookup_by_pid(pid);
-    if (!proc) { req->err = ESRCH; return -1; }
+    ksurface_proc_t *proc = NULL;
+    if (proc_for_pid(pid, &proc) != SURFACE_SUCCESS) { req->err = ESRCH; return -1; }
 
     kvo_rdlock(proc);
     const char *path = proc->nyx.executable_path;
@@ -203,18 +218,22 @@ int sysctl_kern_proc_args(sysctl_req_t *req) {
     int argc = 1;
     size_t total_len = sizeof(int) + path_len;
 
+    int ret = 0;
     if (req->oldlenp) {
         size_t oldlen = 0;
-        if (!mach_syscall_copy_in(req->task, sizeof(size_t), &oldlen, req->oldlenp)) { kvo_unlock(proc); return -1; }
+        if (!mach_syscall_copy_in(req->task, sizeof(size_t), &oldlen, req->oldlenp)) { ret = -1; goto out; }
         if (req->oldp) {
-            if (oldlen < total_len) { req->err = ENOMEM; kvo_unlock(proc); return -1; }
-            if (!mach_syscall_copy_out(req->task, sizeof(int), &argc, req->oldp)) { kvo_unlock(proc); return -1; }
-            if (!mach_syscall_copy_out(req->task, path_len, path, (userspace_pointer_t)((char*)req->oldp + sizeof(int)))) { kvo_unlock(proc); return -1; }
+            if (oldlen < total_len) { req->err = ENOMEM; ret = -1; goto out; }
+            if (!mach_syscall_copy_out(req->task, sizeof(int), &argc, req->oldp)) { ret = -1; goto out; }
+            if (!mach_syscall_copy_out(req->task, path_len, path, (userspace_pointer_t)((char*)req->oldp + sizeof(int)))) { ret = -1; goto out; }
         }
-        if (!mach_syscall_copy_out(req->task, sizeof(size_t), &total_len, req->oldlenp)) { kvo_unlock(proc); return -1; }
+        if (!mach_syscall_copy_out(req->task, sizeof(size_t), &total_len, req->oldlenp)) { ret = -1; goto out; }
     }
+
+out:
     kvo_unlock(proc);
-    return 0;
+    kvo_release(proc);
+    return ret;
 }
 
 bool is_valid_hostname_regex(const char *hostname)
@@ -224,7 +243,7 @@ bool is_valid_hostname_regex(const char *hostname)
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         regex = malloc(sizeof(regex_t));
-        if(regex && regcomp(regex, "^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$", REG_EXTENDED) != 0) {
+        if(regex && regcomp(regex, "^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)*[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$", REG_EXTENDED) != 0) {
             free(regex); regex = NULL;
         }
     });
@@ -372,6 +391,7 @@ DEFINE_SYSCALL_HANDLER(sysctlbyname)
         free(name_buf);
         sysctl_fn_t fn = sysctl_lookup(&req);
         if(fn != NULL) { int ret = fn(&req); *err = req.err; return ret; }
+        sys_return_failure(ENOSYS); // name_buf was freed
     } else {
         /* Dynamic registration search by name */
         pthread_mutex_lock(&sysctl_mutex);
@@ -394,4 +414,17 @@ DEFINE_SYSCALL_HANDLER(sysctlbyname)
 
     free(name_buf);
     sys_return_failure(ENOSYS);
+}
+
+void ksurface_sysctl_cleanup(void) {
+    pthread_mutex_lock(&sysctl_mutex);
+    sysctl_node_t *node = dynamic_sysctls;
+    while (node) {
+        sysctl_node_t *next = node->next;
+        if (node->name) free(node->name);
+        free(node);
+        node = next;
+    }
+    dynamic_sysctls = NULL;
+    pthread_mutex_unlock(&sysctl_mutex);
 }

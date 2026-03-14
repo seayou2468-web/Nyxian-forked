@@ -134,7 +134,7 @@ char *mach_syscall_copy_str_in(task_t task,
                                userspace_pointer_t src,
                                size_t len)
 {
-    /* copy upto lenght of string */
+    /* copy upto length of string */
     size_t clen = 0;
     char buf = '\0';
     do {
@@ -145,21 +145,24 @@ char *mach_syscall_copy_str_in(task_t task,
             return NULL;
         }
         
-        if(clen >= len || buf == '\0')
+        if(buf == '\0' || clen >= len)
         {
             break;
         }
         
         clen++;
-    } while(buf != '\0');
+    } while(1);
+
+    /* copy string + null terminator */
+    char *strBuf = malloc(clen + 1);
+    if(strBuf == NULL) return NULL;
     
-    /* copy string */
-    char *strBuf = malloc(clen);
     if(!mach_syscall_copy_in(task, clen, (kernelspace_pointer_t)strBuf, src))
     {
         free(strBuf);
         return NULL;
     }
     
+    strBuf[clen] = '\0';
     return strBuf;
 }
