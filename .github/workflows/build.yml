@@ -96,7 +96,6 @@ jobs:
           $HOME/theos/bin/update-theos
       # 8. Jailed ビルド
       - name: Build Jailed
-        timeout-minutes: 1200
         run: |
           set -e
           make jailed
