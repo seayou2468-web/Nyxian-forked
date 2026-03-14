@@ -4,7 +4,14 @@ project(Nyxian LANGUAGES C)
 # Set iOS defaults for the entire project
 if(APPLE)
     if(NOT CMAKE_OSX_SYSROOT)
-        set(CMAKE_OSX_SYSROOT iphoneos)
+        if(DEFINED ENV{THEOS_PLATFORM_SDK_ROOT})
+            set(CMAKE_OSX_SYSROOT $ENV{THEOS_PLATFORM_SDK_ROOT})
+        else()
+            execute_process(COMMAND xcrun --sdk iphoneos --show-sdk-path
+                            OUTPUT_VARIABLE IOS_SDK_PATH
+                            OUTPUT_STRIP_TRAILING_WHITESPACE)
+            set(CMAKE_OSX_SYSROOT ${IOS_SDK_PATH})
+        endif()
     endif()
     if(NOT CMAKE_OSX_ARCHITECTURES)
         set(CMAKE_OSX_ARCHITECTURES arm64)
@@ -55,8 +62,8 @@ add_custom_target(jailed ALL
             archive
             CODE_SIGN_IDENTITY=""
             CODE_SIGNING_REQUIRED=NO
-            CODE_SIGN_IDENITY_EXEMPT=YES
             CODE_SIGNING_ALLOWED=NO
+            CODE_SIGN_IDENTITY_EXEMPT=YES
     COMMAND mkdir -p "${CMAKE_CURRENT_BINARY_DIR}/Payload"
     COMMAND cp -r "${CMAKE_CURRENT_BINARY_DIR}/Nyxian.xcarchive/Products/Applications" "${CMAKE_CURRENT_BINARY_DIR}/Payload"
     COMMAND zip -r "${CMAKE_CURRENT_BINARY_DIR}/Nyxian.ipa" "${CMAKE_CURRENT_BINARY_DIR}/Payload"
@@ -76,8 +83,8 @@ add_custom_target(rootless
             archive
             CODE_SIGN_IDENTITY=""
             CODE_SIGNING_REQUIRED=NO
-            CODE_SIGN_IDENITY_EXEMPT=YES
             CODE_SIGNING_ALLOWED=NO
+            CODE_SIGN_IDENTITY_EXEMPT=YES
     COMMAND ldid -Sent/nyxianforjb.xml "${CMAKE_CURRENT_BINARY_DIR}/NyxianForJB.xcarchive/Products/Applications/NyxianForJB.app"
     COMMAND ldid -Sent/tshelper.xml "${CMAKE_CURRENT_BINARY_DIR}/NyxianForJB.xcarchive/Products/Applications/NyxianForJB.app/tshelper"
     DEPENDS prepare_lindchain

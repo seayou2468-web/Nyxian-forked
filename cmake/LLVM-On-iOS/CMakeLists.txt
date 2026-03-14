@@ -39,8 +39,8 @@ ExternalProject_Add(llvm_project
         -DCLANG_ENABLE_STATIC_ANALYZER=OFF
         -DCLANG_ENABLE_ARCMT=OFF
         -DCLANG_TABLEGEN_TARGETS=AArch64
-        -DCMAKE_C_FLAGS=-target\ arm64-apple-ios14.0
-        -DCMAKE_CXX_FLAGS=-target\ arm64-apple-ios14.0
+        -DCMAKE_C_FLAGS=-target\ arm64-apple-ios14.0\ -isysroot\ ${CMAKE_OSX_SYSROOT}
+        -DCMAKE_CXX_FLAGS=-target\ arm64-apple-ios14.0\ -isysroot\ ${CMAKE_OSX_SYSROOT}
         -DCMAKE_OSX_ARCHITECTURES=arm64
         -DLLVM_FORCE_VC_REPOSITORY=https://github.com/ProjectNyxian/LLVM-On-iOS
         ${LLVM_SOURCE_DIR}/llvm
