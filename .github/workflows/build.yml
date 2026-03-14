@@ -65,6 +65,11 @@ jobs:
             fi
           done
 
+      - name: Set SDK Path
+        run: |
+          export THEOS_PLATFORM_SDK_ROOT=$HOME/theos/sdks/iPhoneOS16.5.sdk
+          echo "THEOS_PLATFORM_SDK_ROOT=$THEOS_PLATFORM_SDK_ROOT" >> $GITHUB_ENV
+          
       - name: Cache Build Artifacts
         id: cache-artifacts
         uses: actions/cache@v4
