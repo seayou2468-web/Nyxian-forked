@@ -161,9 +161,9 @@
 			);
 
 			membershipExceptions = (
-				ProcessMonitorViewController.swift,
-				mach_vm.m,
-				mach_vm.h,
+				UI/Settings/ProcessMonitorViewController.swift,
+				LindChain/ProcEnvironment/Surface/sys/compat/mach_vm.m,
+				LindChain/ProcEnvironment/Surface/sys/compat/mach_vm.h,
 			);
 			target = 79A3A9382EDDABAE00C0342E /* ServiceKit */;
 		};
@@ -296,9 +296,6 @@
 				LindChain/Services/trustd/LDETrustProxy.m,
 				main.m,
 				ResecureDecoder.m,
-							ProcessMonitorViewController.swift,
-				mach_vm.m,
-				mach_vm.h,
 			);
 			target = 79BF97F62E6291EE00C60D4C /* LiveProcess */;
 		};
@@ -362,9 +359,6 @@
 				LindChain/Utils/LDEDebouncer.m,
 				LindChain/Utils/Swizzle.m,
 				LindChain/Utils/Zip.m,
-							ProcessMonitorViewController.swift,
-				mach_vm.m,
-				mach_vm.h,
 			);
 			target = 79BF97F62E6291EE00C60D4C /* LiveProcess */;
 		};
