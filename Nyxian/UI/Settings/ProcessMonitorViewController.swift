@@ -18,9 +18,11 @@ class ProcessMonitorViewController: UIThemedTableViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         self.tableView.reloadData()
-        timer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
-            self?.tableView.reloadData()
-        }
+        timer = Timer.scheduledTimer(timeInterval: 2.0,
+                                     target: self,
+                                     selector: #selector(reloadProcessTable),
+                                     userInfo: nil,
+                                     repeats: true)
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -29,6 +31,10 @@ class ProcessMonitorViewController: UIThemedTableViewController {
     }
 
     @objc func refreshProcesses() {
+        self.tableView.reloadData()
+    }
+
+    @objc private func reloadProcessTable() {
         self.tableView.reloadData()
     }
 
