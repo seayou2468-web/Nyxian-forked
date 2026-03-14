@@ -1,6 +1,41 @@
 cmake_minimum_required(VERSION 3.20)
 project(Nyxian LANGUAGES C)
 
+function(ensure_submodule_ready submodule_path required_file)
+    set(_absolute_required_file "${CMAKE_CURRENT_SOURCE_DIR}/${required_file}")
+    if(EXISTS "${_absolute_required_file}")
+        return()
+    endif()
+
+    find_package(Git QUIET)
+    if(NOT GIT_FOUND)
+        message(FATAL_ERROR
+            "Required submodule '${submodule_path}' is missing (${required_file}) and git is unavailable. "
+            "Run 'git submodule update --init --recursive'."
+        )
+    endif()
+
+    message(STATUS "Submodule '${submodule_path}' is not initialized. Attempting to fetch it...")
+    execute_process(
+        COMMAND "${GIT_EXECUTABLE}" submodule update --init --recursive -- "${submodule_path}"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        RESULT_VARIABLE _submodule_result
+        OUTPUT_VARIABLE _submodule_stdout
+        ERROR_VARIABLE _submodule_stderr
+    )
+
+    if(NOT _submodule_result EQUAL 0 OR NOT EXISTS "${_absolute_required_file}")
+        string(STRIP "${_submodule_stdout}" _submodule_stdout)
+        string(STRIP "${_submodule_stderr}" _submodule_stderr)
+        message(FATAL_ERROR
+            "Failed to initialize submodule '${submodule_path}'.\n"
+            "stdout: ${_submodule_stdout}\n"
+            "stderr: ${_submodule_stderr}\n"
+            "Run 'git submodule update --init --recursive' manually and retry."
+        )
+    endif()
+endfunction()
+
 # Set iOS defaults for the entire project
 if(APPLE)
     if(NOT CMAKE_OSX_SYSROOT)
@@ -24,6 +59,11 @@ string(REGEX MATCH "VERSION = ([0-9.]+)" _ ${XCCONFIG_CONTENTS})
 set(NXVERSION ${CMAKE_MATCH_1})
 string(REGEX MATCH "BUILD_NUMBER = ([0-9.A-Za-z.]+)" _ ${XCCONFIG_CONTENTS})
 set(NXBUILD ${CMAKE_MATCH_1})
+
+# Ensure required git submodules are available before configuring child projects.
+ensure_submodule_ready("libroot" "libroot/src/libroot.h")
+ensure_submodule_ready("TrollStore" "TrollStore/Makefile")
+ensure_submodule_ready("LLVM-On-iOS" "LLVM-On-iOS/Makefile")
 
 # Subdirectories
 add_subdirectory(cmake/libroot)
