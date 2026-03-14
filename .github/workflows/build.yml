@@ -47,17 +47,7 @@ jobs:
 
           # SDK 一括ダウンロード（文字列リスト方式）
           sdks_list=(
-            "iPhoneOS9.3 https://github.com/theos/sdks/releases/download/master-146e41f/iPhoneOS9.3.sdk.tar.xz"
-            "iPhoneOS10.3 https://github.com/theos/sdks/releases/download/master-146e41f/iPhoneOS10.3.sdk.tar.xz"
-            "iPhoneOS11.4 https://github.com/theos/sdks/releases/download/master-146e41f/iPhoneOS11.4.sdk.tar.xz"
-            "iPhoneOS12.4 https://github.com/theos/sdks/releases/download/master-146e41f/iPhoneOS12.4.sdk.tar.xz"
-            "iPhoneOS13.7 https://github.com/theos/sdks/releases/download/master-146e41f/iPhoneOS13.7.sdk.tar.xz"
-            "iPhoneOS14.5 https://github.com/theos/sdks/releases/download/master-146e41f/iPhoneOS14.5.sdk.tar.xz"
-            "iPhoneOS15.6 https://github.com/theos/sdks/releases/download/master-146e41f/iPhoneOS15.6.sdk.tar.xz"
             "iPhoneOS16.5 https://github.com/theos/sdks/releases/download/master-146e41f/iPhoneOS16.5.sdk.tar.xz"
-            "AppleTVOS10.2 https://github.com/theos/sdks/releases/download/master-146e41f/AppleTVOS10.2.sdk.tar.xz"
-            "AppleTVOS11.4 https://github.com/theos/sdks/releases/download/master-146e41f/AppleTVOS11.4.sdk.tar.xz"
-            "AppleTVOS12.4 https://github.com/theos/sdks/releases/download/master-146e41f/AppleTVOS12.4.sdk.tar.xz"
           )
 
           for entry in "${sdks_list[@]}"; do
