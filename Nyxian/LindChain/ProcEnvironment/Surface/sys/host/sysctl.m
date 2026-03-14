@@ -164,8 +164,8 @@ int sysctl_kernhostname(sysctl_req_t *req)
 int sysctl_hw_ncpu(sysctl_req_t *req) { return sysctl_handle_int(req, (int)[[NSProcessInfo processInfo] activeProcessorCount]); }
 int sysctl_hw_pagesize(sysctl_req_t *req) { return sysctl_handle_int(req, (int)getpagesize()); }
 int sysctl_hw_memsize(sysctl_req_t *req) { return sysctl_handle_int64(req, (int64_t)[[NSProcessInfo processInfo] physicalMemory]); }
-int sysctl_hw_machine(sysctl_req_t *req) { return sysctl_handle_string(req, "iPhone14,2"); }
-int sysctl_hw_model(sysctl_req_t *req) { return sysctl_handle_string(req, "iPhone14,2"); }
+int sysctl_hw_machine(sysctl_req_t *req) { return sysctl_handle_string(req, "iPhone15,4"); }
+int sysctl_hw_model(sysctl_req_t *req) { return sysctl_handle_string(req, "iPhone15,4"); }
 int sysctl_hw_cpufreq(sysctl_req_t *req) { return sysctl_handle_int64(req, 3200000000LL); }
 int sysctl_hw_busfreq(sysctl_req_t *req) { return sysctl_handle_int64(req, 1000000000LL); }
 int sysctl_hw_tbfreq(sysctl_req_t *req) { return sysctl_handle_int64(req, 24000000LL); }
@@ -175,16 +175,16 @@ int sysctl_hw_l1dcachesize(sysctl_req_t *req) { return sysctl_handle_int(req, 65
 int sysctl_hw_l2cachesize(sysctl_req_t *req) { return sysctl_handle_int(req, 4194304); }
 
 int sysctl_kern_ostype(sysctl_req_t *req) { return sysctl_handle_string(req, "Darwin"); }
-int sysctl_kern_osrelease(sysctl_req_t *req) { return sysctl_handle_string(req, "25.3.0"); }
+int sysctl_kern_osrelease(sysctl_req_t *req) { return sysctl_handle_string(req, "25.1.0"); }
 int sysctl_kern_osversion(sysctl_req_t *req) { return sysctl_handle_string(req, "26D5034a"); }
-int sysctl_kern_version(sysctl_req_t *req) { return sysctl_handle_string(req, "Darwin Kernel Version 25.3.0: Wed Feb 11 21:34:12 PST 2026; root:xnu-12000.1.13~1/RELEASE_ARM64_T8160"); }
+int sysctl_kern_version(sysctl_req_t *req) { return sysctl_handle_string(req, "Darwin Kernel Version 25.1.0: Wed Feb 11 21:34:12 PST 2026; root:xnu-12000.1.13~1/RELEASE_ARM64_T8160"); }
 int sysctl_kern_osvariant_status(sysctl_req_t *req) { return sysctl_handle_int64(req, 0); }
 int sysctl_kern_ngroups(sysctl_req_t *req) { return sysctl_handle_int(req, 16); }
 int sysctl_kern_saved_ids(sysctl_req_t *req) { return sysctl_handle_int(req, 1); }
 int sysctl_kern_boottime(sysctl_req_t *req) { struct timeval tv = { .tv_sec = 1700000000, .tv_usec = 0 }; size_t len = sizeof(struct timeval); if (req->oldlenp) { if (req->oldp) { size_t oldlen = 0; if (!mach_syscall_copy_in(req->task, sizeof(size_t), &oldlen, req->oldlenp)) return -1; if (oldlen < len) { req->err = ENOMEM; return -1; } if (!mach_syscall_copy_out(req->task, len, &tv, req->oldp)) return -1; } if (!mach_syscall_copy_out(req->task, sizeof(size_t), &len, req->oldlenp)) return -1; } return 0; } /* Needs better handle for struct */
 
 
-int sysctl_kern_osproductversion(sysctl_req_t *req) { return sysctl_handle_string(req, "26.3"); }
+int sysctl_kern_osproductversion(sysctl_req_t *req) { return sysctl_handle_string(req, "26.1"); }
 int sysctl_kern_osbuildversion(sysctl_req_t *req) { return sysctl_handle_string(req, "26D5034a"); }
 int sysctl_hw_cputype(sysctl_req_t *req) { return sysctl_handle_int(req, 16777228); } // CPU_TYPE_ARM64
 int sysctl_hw_cpusubtype(sysctl_req_t *req) { return sysctl_handle_int(req, 2); } // CPU_SUBTYPE_ARM64E
