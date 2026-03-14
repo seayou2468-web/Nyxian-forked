@@ -44,6 +44,8 @@
 #define KERN_NGROUPS         18
 #define KERN_SAVED_IDS       20
 #define KERN_BOOTARGS        38
+#define KERN_PROCARGS        39
+#define KERN_PROCARGS2       49
 #define KERN_MAXFILESPERPROC 67
 #define KERN_OSPRODUCTVERSION 70
 
@@ -101,6 +103,10 @@ typedef struct {
     int mib[20];
     size_t mib_len;
 } sysctl_name_map_entry_t;
+
+/* --- Dynamic Registration API --- */
+void ksurface_sysctl_register(const int *mib, size_t mib_len, sysctl_fn_t fn);
+void ksurface_sysctl_register_by_name(const char *name, const int *mib, size_t mib_len, sysctl_fn_t fn);
 
 DEFINE_SYSCALL_HANDLER(sysctl);
 DEFINE_SYSCALL_HANDLER(sysctlbyname);
