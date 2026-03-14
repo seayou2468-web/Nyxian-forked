@@ -50,7 +50,6 @@ jobs:
           echo "PATH=$HOME/theos/bin:$PATH" >> $GITHUB_ENV
 
       - name: Build Jailed
-        timeout-minutes: 1200
         run: |
           set -e
           make jailed

@@ -25,7 +25,7 @@
 #import <LindChain/ProcEnvironment/Surface/limits.h>
 #import <LindChain/ProcEnvironment/Surface/entitlement.h>
 #import <LindChain/ProcEnvironment/Surface/obj/kvobject.h>
-#include <sys/sysctl.h>
+#include <LindChain/ProcEnvironment/Surface/sys/host/bsd_types.h>
 
 /// Helper macros
 #define proc_getpid(proc) proc->bsd.kp_proc.p_pid
@@ -72,7 +72,7 @@
 typedef struct ksurface_proc ksurface_proc_t;
 typedef struct ksurface_proc ksurface_proc_snapshot_t;
 typedef struct kchildren ksurface_kproc_children_t;
-typedef struct kinfo_proc kinfo_proc_t;
+typedef struct darwin_kinfo_proc kinfo_proc_t;
 typedef struct knyx_proc knyx_proc_t;
 
 /// Nyxian process structure

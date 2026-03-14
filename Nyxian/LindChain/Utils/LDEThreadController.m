@@ -68,6 +68,7 @@ int LDEGetUserSetThreadCount(void)
 @end
 
 @interface LDEThreadController () {
+    @public
     pthread_mutex_t _mutex;
     pthread_cond_t _cond;
     NSMutableArray<LDEThreadTask *> *_queue;
