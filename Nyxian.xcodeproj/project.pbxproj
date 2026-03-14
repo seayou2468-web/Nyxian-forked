@@ -7,9 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		1AD482261E334BB3A1D15883 /* mach_vm.m in Sources */ = {isa = PBXBuildFile; fileRef = 8907D99377134FC59BC8C14C /* mach_vm.m */; };
-		929B77EAE1AB48D4A973A4BD /* mach_vm.h in Sources */ = {isa = PBXBuildFile; fileRef = 2595A41E693E499199874C51 /* mach_vm.h */; };
-		7D00D03B41234EACA363A4FC /* ProcessMonitorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFF3421C2CCA40E38147D7B7 /* ProcessMonitorViewController.swift */; };
+		210B52CED97F4854875E93ED /* mach_vm.m in Sources */ = {isa = PBXBuildFile; fileRef = 403D56BF44DF430A81523DB2 /* mach_vm.m */; };
+		49A3C195B2BD4CDDBC27B006 /* mach_vm.m in Sources */ = {isa = PBXBuildFile; fileRef = 403D56BF44DF430A81523DB2 /* mach_vm.m */; };
+		1246ACA24E1046BBBEB8A4DD /* ProcessMonitorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8F1B965915A4533A9D2395F /* ProcessMonitorViewController.swift */; };
+		F7B8B523BD73423D8A0FA7F1 /* ProcessMonitorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8F1B965915A4533A9D2395F /* ProcessMonitorViewController.swift */; };
 		793A7E502EB5996A0044418E /* SwiftTerm in Frameworks */ = {isa = PBXBuildFile; productRef = 793A7E4F2EB5996A0044418E /* SwiftTerm */; };
 		793FCD242E6730740011B3F5 /* libarchive.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 79BF9A8E2E62BA7D00C60D4C /* libarchive.tbd */; };
 		795227872F45B52000D1C3CC /* LiveProcess.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 79BF97F72E6291EE00C60D4C /* LiveProcess.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -119,9 +120,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		8907D99377134FC59BC8C14C /* mach_vm.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = mach_vm.m; sourceTree = "<group>"; };
-		2595A41E693E499199874C51 /* mach_vm.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = mach_vm.h; sourceTree = "<group>"; };
-		FFF3421C2CCA40E38147D7B7 /* ProcessMonitorViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessMonitorViewController.swift; sourceTree = "<group>"; };
+		403D56BF44DF430A81523DB2 /* mach_vm.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = mach_vm.m; sourceTree = "<group>"; };
+		4B34D5C2F45448109C4D7AC1 /* mach_vm.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = mach_vm.h; sourceTree = "<group>"; };
+		A8F1B965915A4533A9D2395F /* ProcessMonitorViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessMonitorViewController.swift; sourceTree = "<group>"; };
 		79277DC02EE8752800F18B30 /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
 		79277DC62EE8761000F18B30 /* version.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = version.sh; sourceTree = "<group>"; };
 		79281CBF2E3A44CA00E983C9 /* UniformTypeIdentifiers.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UniformTypeIdentifiers.framework; path = System/Library/Frameworks/UniformTypeIdentifiers.framework; sourceTree = SDKROOT; };
@@ -682,8 +683,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1AD482261E334BB3A1D15883 /* mach_vm.m in Sources */,
-				7D00D03B41234EACA363A4FC /* ProcessMonitorViewController.swift in Sources */,
+				210B52CED97F4854875E93ED /* mach_vm.m in Sources */,
+				49A3C195B2BD4CDDBC27B006 /* mach_vm.m in Sources */,
+				1246ACA24E1046BBBEB8A4DD /* ProcessMonitorViewController.swift in Sources */,
+				F7B8B523BD73423D8A0FA7F1 /* ProcessMonitorViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -771,6 +774,7 @@
 				TARGETED_DEVICE_FAMILY = 1;
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
+							SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
 		};
@@ -811,6 +815,7 @@
 				TARGETED_DEVICE_FAMILY = 1;
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
+							SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};
@@ -1143,6 +1148,7 @@
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
+							SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
 		};
@@ -1237,6 +1243,7 @@
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
+							SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};
@@ -1307,6 +1314,7 @@
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+							SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
 		};
@@ -1370,6 +1378,7 @@
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
+							SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};
