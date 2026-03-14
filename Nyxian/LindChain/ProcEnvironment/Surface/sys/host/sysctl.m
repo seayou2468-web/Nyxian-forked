@@ -28,18 +28,39 @@
 #import <LindChain/ProcEnvironment/Utils/klog.h>
 #import <regex.h>
 
-/* --- Dynamic Registration Structures --- */
+/* --- Hash Map Implementation --- */
+
+#define SYSCTL_HASH_SIZE 256
 
 typedef struct sysctl_node {
     char *name;
     int mib[20];
     size_t mib_len;
     sysctl_fn_t fn;
-    struct sysctl_node *next;
+    struct sysctl_node *next_mib;
+    struct sysctl_node *next_name;
 } sysctl_node_t;
 
-static sysctl_node_t *dynamic_sysctls = NULL;
+static sysctl_node_t *mib_hash[SYSCTL_HASH_SIZE] = {0};
+static sysctl_node_t *name_hash[SYSCTL_HASH_SIZE] = {0};
 static pthread_mutex_t sysctl_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+static uint32_t hash_mib(const int *mib, size_t len) {
+    uint32_t hash = 5381;
+    for (size_t i = 0; i < len; i++) {
+        hash = ((hash << 5) + hash) + (uint32_t)mib[i];
+    }
+    return hash % SYSCTL_HASH_SIZE;
+}
+
+static uint32_t hash_name(const char *name) {
+    uint32_t hash = 5381;
+    int c;
+    while ((c = *name++)) {
+        hash = ((hash << 5) + hash) + (uint32_t)c;
+    }
+    return hash % SYSCTL_HASH_SIZE;
+}
 
 void ksurface_sysctl_register(const int *mib, size_t mib_len, sysctl_fn_t fn) {
     ksurface_sysctl_register_by_name(NULL, mib, mib_len, fn);
@@ -48,18 +69,14 @@ void ksurface_sysctl_register(const int *mib, size_t mib_len, sysctl_fn_t fn) {
 void ksurface_sysctl_register_by_name(const char *name, const int *mib, size_t mib_len, sysctl_fn_t fn) {
     pthread_mutex_lock(&sysctl_mutex);
 
-    /* Check for duplicate */
-    sysctl_node_t *curr = dynamic_sysctls;
+    uint32_t mib_idx = hash_mib(mib, mib_len);
+    sysctl_node_t *curr = mib_hash[mib_idx];
     while (curr) {
         if (mib_len == curr->mib_len && memcmp(mib, curr->mib, mib_len * sizeof(int)) == 0) {
             pthread_mutex_unlock(&sysctl_mutex);
             return;
         }
-        if (name && curr->name && strcmp(name, curr->name) == 0) {
-            pthread_mutex_unlock(&sysctl_mutex);
-            return;
-        }
-        curr = curr->next;
+        curr = curr->next_mib;
     }
 
     sysctl_node_t *node = malloc(sizeof(sysctl_node_t));
@@ -68,8 +85,35 @@ void ksurface_sysctl_register_by_name(const char *name, const int *mib, size_t m
         node->mib_len = mib_len;
         memcpy(node->mib, mib, mib_len * sizeof(int));
         node->fn = fn;
-        node->next = dynamic_sysctls;
-        dynamic_sysctls = node;
+
+        /* Insert into MIB hash */
+        node->next_mib = mib_hash[mib_idx];
+        mib_hash[mib_idx] = node;
+
+        /* Insert into Name hash if applicable */
+        if (name) {
+            uint32_t name_idx = hash_name(name);
+            node->next_name = name_hash[name_idx];
+            name_hash[name_idx] = node;
+        } else {
+            node->next_name = NULL;
+        }
+    }
+    pthread_mutex_unlock(&sysctl_mutex);
+}
+
+void ksurface_sysctl_cleanup(void) {
+    pthread_mutex_lock(&sysctl_mutex);
+    for (int i = 0; i < SYSCTL_HASH_SIZE; i++) {
+        sysctl_node_t *node = mib_hash[i];
+        while (node) {
+            sysctl_node_t *next = node->next_mib;
+            if (node->name) free(node->name);
+            free(node);
+            node = next;
+        }
+        mib_hash[i] = NULL;
+        name_hash[i] = NULL;
     }
     pthread_mutex_unlock(&sysctl_mutex);
 }
@@ -346,9 +390,10 @@ static sysctl_fn_t sysctl_lookup(sysctl_req_t *req)
         }
     }
 
-    /* Check dynamic list */
+    /* Check dynamic MIB hash map */
     pthread_mutex_lock(&sysctl_mutex);
-    sysctl_node_t *node = dynamic_sysctls;
+    uint32_t idx = hash_mib(req->name, req->namelen);
+    sysctl_node_t *node = mib_hash[idx];
     while (node) {
         if (req->namelen == node->mib_len) {
             bool match = true;
@@ -359,7 +404,7 @@ static sysctl_fn_t sysctl_lookup(sysctl_req_t *req)
                 return fn;
             }
         }
-        node = node->next;
+        node = node->next_mib;
     }
     pthread_mutex_unlock(&sysctl_mutex);
 
@@ -391,11 +436,12 @@ DEFINE_SYSCALL_HANDLER(sysctlbyname)
         free(name_buf);
         sysctl_fn_t fn = sysctl_lookup(&req);
         if(fn != NULL) { int ret = fn(&req); *err = req.err; return ret; }
-        sys_return_failure(ENOSYS); // name_buf was freed
+        sys_return_failure(ENOSYS);
     } else {
-        /* Dynamic registration search by name */
+        /* Dynamic registration search by name hash map */
         pthread_mutex_lock(&sysctl_mutex);
-        sysctl_node_t *node = dynamic_sysctls;
+        uint32_t idx = hash_name(name_buf);
+        sysctl_node_t *node = name_hash[idx];
         while (node) {
             if (node->name && strcmp(name_buf, node->name) == 0) {
                 sysctl_req_t req = { .name = {}, .namelen = (u_int)node->mib_len, .oldp = (userspace_pointer_t)args[1], .oldlenp = (userspace_pointer_t)args[2], .newp = (userspace_pointer_t)args[3], .newlen = (size_t)args[4], .err = 0, .task = sys_task_, .proc_snapshot = sys_proc_snapshot_ };
@@ -407,7 +453,7 @@ DEFINE_SYSCALL_HANDLER(sysctlbyname)
                 *err = req.err;
                 return ret;
             }
-            node = node->next;
+            node = node->next_name;
         }
         pthread_mutex_unlock(&sysctl_mutex);
     }
@@ -418,13 +464,16 @@ DEFINE_SYSCALL_HANDLER(sysctlbyname)
 
 void ksurface_sysctl_cleanup(void) {
     pthread_mutex_lock(&sysctl_mutex);
-    sysctl_node_t *node = dynamic_sysctls;
-    while (node) {
-        sysctl_node_t *next = node->next;
-        if (node->name) free(node->name);
-        free(node);
-        node = next;
+    for (int i = 0; i < SYSCTL_HASH_SIZE; i++) {
+        sysctl_node_t *node = mib_hash[i];
+        while (node) {
+            sysctl_node_t *next = node->next_mib;
+            if (node->name) free(node->name);
+            free(node);
+            node = next;
+        }
+        mib_hash[i] = NULL;
+        name_hash[i] = NULL;
     }
-    dynamic_sysctls = NULL;
     pthread_mutex_unlock(&sysctl_mutex);
 }
