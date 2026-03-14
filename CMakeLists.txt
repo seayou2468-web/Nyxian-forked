@@ -9,9 +9,9 @@ string(REGEX MATCH "BUILD_NUMBER = ([0-9.A-Za-z.]+)" _ ${XCCONFIG_CONTENTS})
 set(NXBUILD ${CMAKE_MATCH_1})
 
 # Subdirectories
-add_subdirectory(libroot)
-add_subdirectory(LLVM-On-iOS)
-add_subdirectory(TrollStore)
+add_subdirectory(cmake/libroot)
+add_subdirectory(cmake/LLVM-On-iOS)
+add_subdirectory(cmake/TrollStore)
 
 # Main App configuration
 set(SCHEME "Nyxian")
@@ -26,9 +26,9 @@ add_custom_target(prepare_lindchain ALL
     COMMAND ${CMAKE_COMMAND} -E make_directory "${JB_SUPPORT_DIR}"
     COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:libroot>" "${JB_SUPPORT_DIR}/libroot.a"
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/libroot/src/libroot.h" "${JB_SUPPORT_DIR}/libroot.h"
-    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_BINARY_DIR}/TrollStore/_build/tshelper" "${JB_SUPPORT_DIR}/tshelper"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_BINARY_DIR}/LLVM-On-iOS/LLVM.xcframework" "${LINDCHAIN_DIR}/LLVM.xcframework"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_BINARY_DIR}/LLVM-On-iOS/Clang.xcframework" "${LINDCHAIN_DIR}/Clang.xcframework"
+    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_BINARY_DIR}/cmake/TrollStore/_build/tshelper" "${JB_SUPPORT_DIR}/tshelper"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_BINARY_DIR}/cmake/LLVM-On-iOS/LLVM.xcframework" "${LINDCHAIN_DIR}/LLVM.xcframework"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_BINARY_DIR}/cmake/LLVM-On-iOS/Clang.xcframework" "${LINDCHAIN_DIR}/Clang.xcframework"
     DEPENDS libroot llvm_frameworks trollstore_components
 )
 
