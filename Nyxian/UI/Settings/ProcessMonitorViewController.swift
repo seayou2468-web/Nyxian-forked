@@ -16,10 +16,24 @@ class ProcessMonitorViewController: UIThemedTableViewController {
     private struct NXKernelVMFlags: OptionSet {
         let rawValue: Int32
 
-        static let read  = NXKernelVMFlags(rawValue: 0x01)
+        static let read = NXKernelVMFlags(rawValue: 0x01)
         static let write = NXKernelVMFlags(rawValue: 0x02)
 
         static let defaultWritePatch: NXKernelVMFlags = [.read, .write]
+    }
+
+    private enum SortMode: Int, CaseIterable {
+        case topCPU = 0
+        case topMemory = 1
+        case pid = 2
+
+        var title: String {
+            switch self {
+            case .topCPU: return "CPU"
+            case .topMemory: return "MEM"
+            case .pid: return "PID"
+            }
+        }
     }
 
     private struct ProcessSnapshot {
@@ -37,27 +51,36 @@ class ProcessMonitorViewController: UIThemedTableViewController {
     private var displayedProcesses: [LDEProcess] = []
     private var lastRefreshUptimeNs: UInt64?
     private var cpuCoreCount: Int32 = 1
-    private var isTopSortEnabled: Bool = true
+    private var sortMode: SortMode = .topCPU
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        self.title = "Process Monitor"
-        self.tableView.register(NXProjectTableCell.self, forCellReuseIdentifier: NXProjectTableCell.reuseIdentifier())
+        title = "Process Monitor"
 
-        self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .refresh,
-                                                                  target: self,
-                                                                  action: #selector(refreshProcesses))
-        self.navigationItem.leftBarButtonItem = UIBarButtonItem(title: "Top",
-                                                                 style: .plain,
-                                                                 target: self,
-                                                                 action: #selector(toggleTopSort))
+        tableView.register(NXProjectTableCell.self,
+                           forCellReuseIdentifier: NXProjectTableCell.reuseIdentifier())
 
-        self.cpuCoreCount = max(1, queryCPUCoreCountViaSysctl())
+        navigationItem.rightBarButtonItems = [
+            UIBarButtonItem(barButtonSystemItem: .refresh,
+                            target: self,
+                            action: #selector(refreshProcesses)),
+            UIBarButtonItem(title: "Tasks",
+                            style: .plain,
+                            target: self,
+                            action: #selector(presentTaskManagerActions))
+        ]
+
+        navigationItem.leftBarButtonItem = UIBarButtonItem(title: sortMode.title,
+                                                           style: .plain,
+                                                           target: self,
+                                                           action: #selector(cycleSortMode))
+
+        cpuCoreCount = max(1, queryCPUCoreCountViaSysctl())
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        self.refreshProcesses()
+        refreshProcesses()
         timer = Timer.scheduledTimer(timeInterval: 2.0,
                                      target: self,
                                      selector: #selector(reloadProcessTable),
@@ -68,73 +91,116 @@ class ProcessMonitorViewController: UIThemedTableViewController {
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         timer?.invalidate()
+        timer = nil
+    }
+
+    @objc private func cycleSortMode() {
+        let next = (sortMode.rawValue + 1) % SortMode.allCases.count
+        sortMode = SortMode(rawValue: next) ?? .topCPU
+        navigationItem.leftBarButtonItem?.title = sortMode.title
+        recomputeDisplayedProcesses()
+        tableView.reloadData()
+    }
+
+    @objc private func presentTaskManagerActions() {
+        let alert = UIAlertController(title: "Task Manager",
+                                      message: "Bulk actions",
+                                      preferredStyle: .actionSheet)
+
+        alert.addAction(UIAlertAction(title: "Refresh Now", style: .default) { _ in
+            self.refreshProcesses()
+        })
+
+        alert.addAction(UIAlertAction(title: "Suspend All Running", style: .default) { _ in
+            let targets = self.displayedProcesses.filter { !$0.isSuspended }
+            targets.forEach { _ = $0.suspend() }
+            self.refreshProcesses()
+            NotificationServer.NotifyUser(level: .success,
+                                          notification: "Suspended \(targets.count) process(es)")
+        })
+
+        alert.addAction(UIAlertAction(title: "Resume All Suspended", style: .default) { _ in
+            let targets = self.displayedProcesses.filter { $0.isSuspended }
+            targets.forEach { _ = $0.resume() }
+            self.refreshProcesses()
+            NotificationServer.NotifyUser(level: .success,
+                                          notification: "Resumed \(targets.count) process(es)")
+        })
+
+        alert.addAction(UIAlertAction(title: "Terminate Suspended", style: .destructive) { _ in
+            let targets = self.displayedProcesses.filter { $0.isSuspended }
+            targets.forEach { _ = $0.terminate() }
+            self.refreshProcesses()
+            NotificationServer.NotifyUser(level: .success,
+                                          notification: "Terminated \(targets.count) suspended process(es)")
+        })
+
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+
+        if let popover = alert.popoverPresentationController {
+            popover.barButtonItem = navigationItem.rightBarButtonItems?.last
+        }
+
+        present(alert, animated: true)
     }
 
     @objc func refreshProcesses() {
         refreshProcessStats()
-        self.tableView.reloadData()
+        tableView.reloadData()
     }
 
     @objc private func reloadProcessTable() {
         refreshProcessStats()
-        self.tableView.reloadData()
-    }
-
-    @objc private func toggleTopSort() {
-        isTopSortEnabled.toggle()
-        navigationItem.leftBarButtonItem?.title = isTopSortEnabled ? "Top" : "PID"
-        recomputeDisplayedProcesses()
-        self.tableView.reloadData()
+        tableView.reloadData()
     }
 
     private func sortedProcessList(from processes: [LDEProcess]) -> [LDEProcess] {
-        if isTopSortEnabled {
+        switch sortMode {
+        case .topCPU:
             return processes.sorted {
-                let lhsCPU = statsByPid[$0.pid]?.cpuPercent ?? 0
-                let rhsCPU = statsByPid[$1.pid]?.cpuPercent ?? 0
-                if lhsCPU == rhsCPU {
-                    return $0.pid < $1.pid
-                }
-                return lhsCPU > rhsCPU
+                let l = statsByPid[$0.pid]?.cpuPercent ?? 0
+                let r = statsByPid[$1.pid]?.cpuPercent ?? 0
+                if l == r { return $0.pid < $1.pid }
+                return l > r
             }
+        case .topMemory:
+            return processes.sorted {
+                let l = statsByPid[$0.pid]?.residentBytes ?? 0
+                let r = statsByPid[$1.pid]?.residentBytes ?? 0
+                if l == r { return $0.pid < $1.pid }
+                return l > r
+            }
+        case .pid:
+            return processes.sorted { $0.pid < $1.pid }
         }
-
-        return processes.sorted { $0.pid < $1.pid }
     }
 
     private func recomputeDisplayedProcesses() {
-        let raw = Array(LDEProcessManager.shared().processes.values)
-        displayedProcesses = sortedProcessList(from: raw)
+        displayedProcesses = sortedProcessList(from: Array(LDEProcessManager.shared().processes.values))
     }
 
     private func refreshProcessStats() {
         let nowUptimeNs = monotonicUptimeNanoseconds()
-        let elapsedNs: UInt64?
-
-        if let last = lastRefreshUptimeNs, nowUptimeNs > last {
-            elapsedNs = nowUptimeNs - last
-        } else {
-            elapsedNs = nil
-        }
+        let elapsedNs: UInt64? = {
+            guard let last = lastRefreshUptimeNs, nowUptimeNs > last else { return nil }
+            return nowUptimeNs - last
+        }()
 
         var currentSnapshots: [Int32: ProcessSnapshot] = [:]
         var computedStats: [Int32: ProcessStats] = [:]
 
         for process in LDEProcessManager.shared().processes.values {
-            guard let snapshot = readSnapshot(forPID: process.pid) else {
-                continue
-            }
+            guard let snapshot = readSnapshot(forPID: process.pid) else { continue }
 
             currentSnapshots[process.pid] = snapshot
-
             let cpuPercent: Double
+
             if let previous = previousSnapshots[process.pid],
                let elapsedNs,
                elapsedNs > 0,
                snapshot.totalTimeNs >= previous.totalTimeNs {
                 let deltaTime = snapshot.totalTimeNs - previous.totalTimeNs
-                let raw = (Double(deltaTime) / Double(elapsedNs)) * 100.0
-                cpuPercent = min(999.0, raw)
+                cpuPercent = min(999.0, (Double(deltaTime) / Double(elapsedNs)) * 100.0)
             } else {
                 cpuPercent = 0
             }
@@ -143,9 +209,9 @@ class ProcessMonitorViewController: UIThemedTableViewController {
                                                       residentBytes: snapshot.residentBytes)
         }
 
-        self.previousSnapshots = currentSnapshots
-        self.statsByPid = computedStats
-        self.lastRefreshUptimeNs = nowUptimeNs
+        previousSnapshots = currentSnapshots
+        statsByPid = computedStats
+        lastRefreshUptimeNs = nowUptimeNs
         recomputeDisplayedProcesses()
     }
 
@@ -158,12 +224,8 @@ class ProcessMonitorViewController: UIThemedTableViewController {
             }
         }
 
-        guard result == 0 else {
-            return nil
-        }
-
-        let totalTimeNs = usage.ri_user_time + usage.ri_system_time
-        return ProcessSnapshot(totalTimeNs: totalTimeNs,
+        guard result == 0 else { return nil }
+        return ProcessSnapshot(totalTimeNs: usage.ri_user_time + usage.ri_system_time,
                                residentBytes: usage.ri_resident_size)
     }
 
@@ -172,10 +234,7 @@ class ProcessMonitorViewController: UIThemedTableViewController {
         mach_timebase_info(&info)
 
         let now = mach_absolute_time()
-        if info.denom == 0 {
-            return now
-        }
-
+        guard info.denom != 0 else { return now }
         return now * UInt64(info.numer) / UInt64(info.denom)
     }
 
@@ -189,10 +248,7 @@ class ProcessMonitorViewController: UIThemedTableViewController {
             return sysctl(base, u_int(mib.count), &cpuCount, &size, nil, 0)
         }
 
-        if ret != 0 || cpuCount <= 0 {
-            return 1
-        }
-
+        if ret != 0 || cpuCount <= 0 { return 1 }
         return cpuCount
     }
 
@@ -201,7 +257,7 @@ class ProcessMonitorViewController: UIThemedTableViewController {
     }
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return displayedProcesses.count
+        displayedProcesses.count
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -210,17 +266,13 @@ class ProcessMonitorViewController: UIThemedTableViewController {
         }
 
         let process = displayedProcesses[indexPath.row]
+        let stats = statsByPid[process.pid]
+        let status = process.isSuspended ? "Suspended" : "Running"
 
         let cell = tableView.dequeueReusableCell(withIdentifier: NXProjectTableCell.reuseIdentifier(),
                                                  for: indexPath) as! NXProjectTableCell
-
-        let status: String = process.isSuspended ? "Suspended" : "Running"
-        let stats = statsByPid[process.pid]
-        let cpuText = String(format: "%.1f%%", stats?.cpuPercent ?? 0)
-        let memText = formattedMemory(stats?.residentBytes ?? 0)
-
         cell.configure(withDisplayName: process.displayName ?? "Unknown",
-                       withBundleIdentifier: "PID: \(process.pid) | \(status) | CPU: \(cpuText) | MEM: \(memText) | Cores: \(cpuCoreCount)",
+                       withBundleIdentifier: "PID: \(process.pid) | \(status) | CPU: \(String(format: "%.1f%%", stats?.cpuPercent ?? 0)) | MEM: \(formattedMemory(stats?.residentBytes ?? 0)) | Cores: \(cpuCoreCount)",
                        withAppIcon: nil,
                        showAppIcon: false,
                        showBundleID: true,
@@ -230,25 +282,21 @@ class ProcessMonitorViewController: UIThemedTableViewController {
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-
-        guard indexPath.row < displayedProcesses.count else {
-            return
-        }
+        guard indexPath.row < displayedProcesses.count else { return }
 
         let process = displayedProcesses[indexPath.row]
-
         let alert = UIAlertController(title: "Process: \(process.displayName ?? "Unknown")",
                                       message: "PID: \(process.pid)\nBundle: \(process.bundleIdentifier ?? "N/A")",
                                       preferredStyle: .actionSheet)
 
         if process.isSuspended {
             alert.addAction(UIAlertAction(title: "Resume", style: .default) { _ in
-                process.resume()
+                _ = process.resume()
                 self.refreshProcesses()
             })
         } else {
             alert.addAction(UIAlertAction(title: "Suspend", style: .default) { _ in
-                process.suspend()
+                _ = process.suspend()
                 self.refreshProcesses()
             })
         }
@@ -257,12 +305,16 @@ class ProcessMonitorViewController: UIThemedTableViewController {
             self.presentMemoryReadPrompt(for: process)
         })
 
-        alert.addAction(UIAlertAction(title: "Edit Memory", style: .default) { _ in
+        alert.addAction(UIAlertAction(title: "Edit Memory (Hex)", style: .default) { _ in
             self.presentMemoryEditPrompt(for: process)
         })
 
+        alert.addAction(UIAlertAction(title: "Write Typed Value", style: .default) { _ in
+            self.presentTypedWritePrompt(for: process)
+        })
+
         alert.addAction(UIAlertAction(title: "Terminate", style: .destructive) { _ in
-            process.terminate()
+            _ = process.terminate()
             self.refreshProcesses()
         })
 
@@ -271,10 +323,13 @@ class ProcessMonitorViewController: UIThemedTableViewController {
         if let popover = alert.popoverPresentationController {
             let sourceCell = tableView.cellForRow(at: indexPath)
             popover.sourceView = sourceCell ?? tableView
-            popover.sourceRect = sourceCell?.bounds ?? CGRect(x: tableView.bounds.midX, y: tableView.bounds.midY, width: 1, height: 1)
+            popover.sourceRect = sourceCell?.bounds ?? CGRect(x: tableView.bounds.midX,
+                                                               y: tableView.bounds.midY,
+                                                               width: 1,
+                                                               height: 1)
         }
 
-        self.present(alert, animated: true)
+        present(alert, animated: true)
     }
 
     private func presentMemoryReadPrompt(for process: LDEProcess) {
@@ -282,17 +337,17 @@ class ProcessMonitorViewController: UIThemedTableViewController {
                                        message: "Address: hex (0x...) / Length: decimal or 0x...",
                                        preferredStyle: .alert)
 
-        prompt.addTextField { textField in
-            textField.placeholder = "Address (hex)"
-            textField.autocapitalizationType = .none
-            textField.autocorrectionType = .no
+        prompt.addTextField {
+            $0.placeholder = "Address (hex)"
+            $0.autocapitalizationType = .none
+            $0.autocorrectionType = .no
         }
 
-        prompt.addTextField { textField in
-            textField.placeholder = "Length (e.g. 64 or 0x40)"
-            textField.keyboardType = .numbersAndPunctuation
-            textField.autocapitalizationType = .none
-            textField.autocorrectionType = .no
+        prompt.addTextField {
+            $0.placeholder = "Length (e.g. 64 or 0x40)"
+            $0.keyboardType = .numbersAndPunctuation
+            $0.autocapitalizationType = .none
+            $0.autocorrectionType = .no
         }
 
         prompt.addAction(UIAlertAction(title: "Read", style: .default) { _ in
@@ -303,9 +358,7 @@ class ProcessMonitorViewController: UIThemedTableViewController {
                 let address = try self.parseHexAddress(addressText)
                 let length = try self.parseLength(lengthText)
                 let bytes = try self.readMemory(pid: process.pid, address: address, length: length)
-                self.presentHexDump(bytes: bytes,
-                                    address: address,
-                                    process: process)
+                self.presentHexDump(bytes: bytes, address: address, process: process)
             } catch {
                 NotificationServer.NotifyUser(level: .error,
                                               notification: "Memory read failed: \(error.localizedDescription)")
@@ -313,7 +366,7 @@ class ProcessMonitorViewController: UIThemedTableViewController {
         })
 
         prompt.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-        self.present(prompt, animated: true)
+        present(prompt, animated: true)
     }
 
     private func presentHexDump(bytes: [UInt8], address: UInt64, process: LDEProcess) {
@@ -325,30 +378,34 @@ class ProcessMonitorViewController: UIThemedTableViewController {
             return String(format: " %02X", byte)
         }.joined()
 
+        let ascii = capped.map { b in
+            (32...126).contains(Int(b)) ? String(UnicodeScalar(Int(b))!) : "."
+        }.joined()
+
         let suffix = bytes.count > capped.count ? "\n\n(truncated to \(capped.count) bytes)" : ""
 
         let dump = UIAlertController(title: "Read \(bytes.count) bytes from pid \(process.pid)",
-                                     message: (hex.isEmpty ? "(empty)" : hex) + suffix,
+                                     message: (hex.isEmpty ? "(empty)" : hex) + "\n\nASCII:\n" + ascii + suffix,
                                      preferredStyle: .alert)
         dump.addAction(UIAlertAction(title: "OK", style: .default))
-        self.present(dump, animated: true)
+        present(dump, animated: true)
     }
 
     private func presentMemoryEditPrompt(for process: LDEProcess) {
-        let prompt = UIAlertController(title: "Edit Memory",
+        let prompt = UIAlertController(title: "Edit Memory (Hex)",
                                        message: "Address: hex (example 0x100000000)\nValue: hex bytes (example DE AD BE EF)",
                                        preferredStyle: .alert)
 
-        prompt.addTextField { textField in
-            textField.placeholder = "Address (hex)"
-            textField.autocapitalizationType = .none
-            textField.autocorrectionType = .no
+        prompt.addTextField {
+            $0.placeholder = "Address (hex)"
+            $0.autocapitalizationType = .none
+            $0.autocorrectionType = .no
         }
 
-        prompt.addTextField { textField in
-            textField.placeholder = "Bytes (hex)"
-            textField.autocapitalizationType = .allCharacters
-            textField.autocorrectionType = .no
+        prompt.addTextField {
+            $0.placeholder = "Bytes (hex)"
+            $0.autocapitalizationType = .allCharacters
+            $0.autocorrectionType = .no
         }
 
         prompt.addAction(UIAlertAction(title: "Write", style: .destructive) { _ in
@@ -371,7 +428,68 @@ class ProcessMonitorViewController: UIThemedTableViewController {
         })
 
         prompt.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-        self.present(prompt, animated: true)
+        present(prompt, animated: true)
+    }
+
+    private func presentTypedWritePrompt(for process: LDEProcess) {
+        let typeSelector = UIAlertController(title: "Write Typed Value",
+                                             message: "Choose type",
+                                             preferredStyle: .actionSheet)
+
+        let items: [(String, TypedValueKind)] = [
+            ("UInt8", .u8), ("UInt16", .u16), ("UInt32", .u32), ("UInt64", .u64),
+            ("Int32", .i32), ("Int64", .i64), ("Float32", .f32), ("Float64", .f64)
+        ]
+
+        for (title, kind) in items {
+            typeSelector.addAction(UIAlertAction(title: title, style: .default) { _ in
+                self.presentTypedWriteInput(for: process, kind: kind)
+            })
+        }
+
+        typeSelector.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+
+        if let popover = typeSelector.popoverPresentationController {
+            popover.sourceView = view
+            popover.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 1, height: 1)
+        }
+
+        present(typeSelector, animated: true)
+    }
+
+    private enum TypedValueKind {
+        case u8, u16, u32, u64, i32, i64, f32, f64
+    }
+
+    private func presentTypedWriteInput(for process: LDEProcess, kind: TypedValueKind) {
+        let prompt = UIAlertController(title: "Write \(kind)",
+                                       message: "Address: hex / Value: decimal",
+                                       preferredStyle: .alert)
+
+        prompt.addTextField { $0.placeholder = "Address (hex)" }
+        prompt.addTextField { $0.placeholder = "Value" }
+
+        prompt.addAction(UIAlertAction(title: "Write", style: .destructive) { _ in
+            let addressText = prompt.textFields?[0].text ?? ""
+            let valueText = prompt.textFields?[1].text ?? ""
+
+            do {
+                let address = try self.parseHexAddress(addressText)
+                let bytes = try self.serializeTypedValue(kind: kind, raw: valueText)
+                try self.writeMemory(pid: process.pid,
+                                     address: address,
+                                     bytes: bytes,
+                                     flags: .defaultWritePatch)
+                NotificationServer.NotifyUser(level: .success,
+                                              notification: "Wrote \(bytes.count) typed bytes to pid \(process.pid)")
+            } catch {
+                NotificationServer.NotifyUser(level: .error,
+                                              notification: "Typed write failed: \(error.localizedDescription)")
+            }
+        })
+
+        prompt.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        present(prompt, animated: true)
     }
 
     private enum MemoryEditError: LocalizedError {
@@ -379,6 +497,7 @@ class ProcessMonitorViewController: UIThemedTableViewController {
         case invalidBytes
         case emptyBytes
         case invalidLength
+        case invalidTypedValue
         case taskForPidFailed(kern_return_t)
         case vmReadFailed(kern_return_t)
         case vmProtectFailed(kern_return_t)
@@ -394,6 +513,8 @@ class ProcessMonitorViewController: UIThemedTableViewController {
                 return "No bytes were provided."
             case .invalidLength:
                 return "Invalid length value."
+            case .invalidTypedValue:
+                return "Invalid typed value."
             case .taskForPidFailed(let kr):
                 return "task_for_pid failed (\(kr))."
             case .vmReadFailed(let kr):
@@ -415,7 +536,6 @@ class ProcessMonitorViewController: UIThemedTableViewController {
         guard !normalized.isEmpty, let value = UInt64(normalized, radix: 16) else {
             throw MemoryEditError.invalidAddress
         }
-
         return value
     }
 
@@ -442,13 +562,8 @@ class ProcessMonitorViewController: UIThemedTableViewController {
             .replacingOccurrences(of: "_", with: "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
 
-        guard !normalized.isEmpty else {
-            throw MemoryEditError.emptyBytes
-        }
-
-        guard normalized.count % 2 == 0 else {
-            throw MemoryEditError.invalidBytes
-        }
+        guard !normalized.isEmpty else { throw MemoryEditError.emptyBytes }
+        guard normalized.count % 2 == 0 else { throw MemoryEditError.invalidBytes }
 
         var result: [UInt8] = []
         result.reserveCapacity(normalized.count / 2)
@@ -457,9 +572,7 @@ class ProcessMonitorViewController: UIThemedTableViewController {
         while idx < normalized.endIndex {
             let next = normalized.index(idx, offsetBy: 2)
             let pair = String(normalized[idx..<next])
-            guard let byte = UInt8(pair, radix: 16) else {
-                throw MemoryEditError.invalidBytes
-            }
+            guard let byte = UInt8(pair, radix: 16) else { throw MemoryEditError.invalidBytes }
             result.append(byte)
             idx = next
         }
@@ -467,12 +580,45 @@ class ProcessMonitorViewController: UIThemedTableViewController {
         return result
     }
 
+    private func serializeTypedValue(kind: TypedValueKind, raw: String) throws -> [UInt8] {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        func toLE<T>(_ value: T) -> [UInt8] {
+            withUnsafeBytes(of: value) { Array($0) }
+        }
+
+        switch kind {
+        case .u8:
+            guard let v = UInt8(trimmed) else { throw MemoryEditError.invalidTypedValue }
+            return [v]
+        case .u16:
+            guard let v = UInt16(trimmed) else { throw MemoryEditError.invalidTypedValue }
+            return toLE(v.littleEndian)
+        case .u32:
+            guard let v = UInt32(trimmed) else { throw MemoryEditError.invalidTypedValue }
+            return toLE(v.littleEndian)
+        case .u64:
+            guard let v = UInt64(trimmed) else { throw MemoryEditError.invalidTypedValue }
+            return toLE(v.littleEndian)
+        case .i32:
+            guard let v = Int32(trimmed) else { throw MemoryEditError.invalidTypedValue }
+            return toLE(v.littleEndian)
+        case .i64:
+            guard let v = Int64(trimmed) else { throw MemoryEditError.invalidTypedValue }
+            return toLE(v.littleEndian)
+        case .f32:
+            guard let v = Float(trimmed) else { throw MemoryEditError.invalidTypedValue }
+            return toLE(v.bitPattern.littleEndian)
+        case .f64:
+            guard let v = Double(trimmed) else { throw MemoryEditError.invalidTypedValue }
+            return toLE(v.bitPattern.littleEndian)
+        }
+    }
+
     private func taskPort(for pid: Int32) throws -> mach_port_name_t {
         var task: mach_port_name_t = 0
         let tkr = task_for_pid(mach_task_self_, pid, &task)
-        guard tkr == KERN_SUCCESS else {
-            throw MemoryEditError.taskForPidFailed(tkr)
-        }
+        guard tkr == KERN_SUCCESS else { throw MemoryEditError.taskForPidFailed(tkr) }
         return task
     }
 
@@ -483,10 +629,7 @@ class ProcessMonitorViewController: UIThemedTableViewController {
         var outSize: mach_vm_size_t = 0
 
         let kr: kern_return_t = local.withUnsafeMutableBytes { rawBuffer in
-            guard let base = rawBuffer.baseAddress else {
-                return KERN_INVALID_ARGUMENT
-            }
-
+            guard let base = rawBuffer.baseAddress else { return KERN_INVALID_ARGUMENT }
             return mach_vm_read_overwrite(task,
                                           mach_vm_address_t(address),
                                           mach_vm_size_t(length),
@@ -494,10 +637,7 @@ class ProcessMonitorViewController: UIThemedTableViewController {
                                           &outSize)
         }
 
-        guard kr == KERN_SUCCESS else {
-            throw MemoryEditError.vmReadFailed(kr)
-        }
-
+        guard kr == KERN_SUCCESS else { throw MemoryEditError.vmReadFailed(kr) }
         return Array(local.prefix(Int(outSize)))
     }
 
@@ -507,7 +647,6 @@ class ProcessMonitorViewController: UIThemedTableViewController {
                              flags: NXKernelVMFlags) throws {
         let task = try taskPort(for: pid)
 
-        // Best effort: protect may fail on unaligned/immutable mappings; try write anyway.
         let protectKR = mach_vm_protect(task,
                                         mach_vm_address_t(address),
                                         mach_vm_size_t(bytes.count),
@@ -516,24 +655,15 @@ class ProcessMonitorViewController: UIThemedTableViewController {
 
         var mutableBytes = bytes
         let writeKR: kern_return_t = mutableBytes.withUnsafeMutableBytes { rawBuffer in
-            guard let base = rawBuffer.baseAddress else {
-                return KERN_INVALID_ARGUMENT
-            }
-
+            guard let base = rawBuffer.baseAddress else { return KERN_INVALID_ARGUMENT }
             return mach_vm_write(task,
                                  mach_vm_address_t(address),
                                  vm_offset_t(UInt(bitPattern: base)),
                                  mach_msg_type_number_t(bytes.count))
         }
 
-        if writeKR == KERN_SUCCESS {
-            return
-        }
-
-        if protectKR != KERN_SUCCESS {
-            throw MemoryEditError.vmProtectFailed(protectKR)
-        }
-
+        if writeKR == KERN_SUCCESS { return }
+        if protectKR != KERN_SUCCESS { throw MemoryEditError.vmProtectFailed(protectKR) }
         throw MemoryEditError.vmWriteFailed(writeKR)
     }
 }
