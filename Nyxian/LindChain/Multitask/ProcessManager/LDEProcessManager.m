@@ -342,18 +342,23 @@
     /* locking */
     os_unfair_lock_lock(&processes_array_lock);
     
+    NSMutableArray<LDEProcess*> *toTerminate = [[NSMutableArray alloc] init];
     for(NSNumber *key in self.processes)
     {
         LDEProcess *process = self.processes[key];
-        if(!process || ![process.bundleIdentifier isEqualToString:bundleIdentifier]) continue;
-        else
+        if(process && [process.bundleIdentifier isEqualToString:bundleIdentifier])
         {
-            [process terminate];
+            [toTerminate addObject:process];
         }
     }
     
     /* unlocking */
     os_unfair_lock_unlock(&processes_array_lock);
+
+    for(LDEProcess *process in toTerminate)
+    {
+        [process terminate];
+    }
 }
 
 @end

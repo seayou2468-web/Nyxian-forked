@@ -21,6 +21,7 @@
 
 #import <LindChain/ProcEnvironment/Surface/trust.h>
 #import <LindChain/ProcEnvironment/Surface/entitlement.h>
+#include <LindChain/ProcEnvironment/Surface/sys/host/bsd_types.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,11 +37,11 @@
 
 #define APPEND_TAG "NXTRUST"
 
-#define CSMAGIC_EMBEDDED_SIGNATURE      0xfade0cc0
-#define CSMAGIC_CODEDIRECTORY           0xfade0c02
-#define CSSLOT_CODEDIRECTORY            0
-#define CS_HASHTYPE_SHA256              2
-#define CS_HASHTYPE_SHA256_TRUNCATED    3
+/* CSMAGIC_EMBEDDED_SIGNATURE defined in proc_flags.h */
+/* CSMAGIC_CODEDIRECTORY defined in proc_flags.h */
+/* CSSLOT_CODEDIRECTORY defined in proc_flags.h */
+/* CS_HASHTYPE_SHA256 defined in proc_flags.h */
+/* CS_HASHTYPE_SHA256_TRUNCATED defined in proc_flags.h */
 
 typedef struct __BlobIndex {
     uint32_t type;

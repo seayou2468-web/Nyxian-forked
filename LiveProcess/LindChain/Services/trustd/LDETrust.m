@@ -154,7 +154,7 @@
     ksurface_ent_mach_t *mach = (ksurface_ent_mach_t*)data.bytes;
     
     ksurface_return_t ksr = entitlement_mach_verify(mach);
-    if(ksr == KERN_SUCCESS)
+    if(ksr == SURFACE_SUCCESS)
     {
         return mach->token.blob.entitlement;
     }

@@ -192,6 +192,9 @@ class Coordinator: NSObject, TextViewDelegate {
             self.entriesLock.unlock()
 
             if !currentEntries.isEmpty {
+                let gutterWidth = parent.textView.gutterWidth
+                let textViewWidth = parent.textView.bounds.size.width
+
                 for (line, views) in currentEntries {
                     guard let rect = parent.textView.rectForLine(Int(line)) else {
                         UIView.animate(withDuration: 0.3, animations: {
@@ -206,8 +209,8 @@ class Coordinator: NSObject, TextViewDelegate {
                         })
                         continue
                     }
-                    views.0?.frame = CGRect(x: 0, y: rect.origin.y, width: parent.textView.gutterWidth, height: rect.height)
-                    views.1?.frame = CGRect(x: 0, y: rect.origin.y, width: parent.textView.bounds.size.width, height: rect.height)
+                    views.0?.frame = CGRect(x: 0, y: rect.origin.y, width: gutterWidth, height: rect.height)
+                    views.1?.frame = CGRect(x: 0, y: rect.origin.y, width: textViewWidth, height: rect.height)
                 }
             }
         }
@@ -235,18 +238,19 @@ class Coordinator: NSObject, TextViewDelegate {
                 }
                 
                 // Now add new diagnostics
+                let diagCopy = self.diag
+                let gutterWidth = parent.textView.gutterWidth
+                let lineNumberFontSize = parent.textView.theme.lineNumberFont.pointSize
+
                 DispatchQueue.global(qos: .userInitiated).async { [weak self] in
                     guard let self = self else { return }
-                    for item in self.diag {
-                        var rect: CGRect?
-                        DispatchQueue.main.sync {
-                            rect = parent.textView.rectForLine(Int(item.line))
-                        }
-                        guard let lineRect = rect else { continue }
-
+                    for item in diagCopy {
                         let properties = self.vtkey[Int(item.type)]
 
                         DispatchQueue.main.async {
+                            guard let parent = self.parent else { return }
+                            let lineRect = parent.textView.rectForLine(Int(item.line))
+
                             self.entriesLock.lock()
                             if self.entries[item.line] != nil {
                                 self.entriesLock.unlock()
@@ -258,9 +262,9 @@ class Coordinator: NSObject, TextViewDelegate {
                             view.backgroundColor = properties.1
                             view.isUserInteractionEnabled = false
                             
-                            let button = NeoButton(frame: CGRect(x: 0, y: lineRect.origin.y, width: parent.textView.gutterWidth, height: lineRect.height))
+                            let button = NeoButton(frame: CGRect(x: 0, y: lineRect.origin.y, width: gutterWidth, height: lineRect.height))
                             button.backgroundColor = properties.1.withAlphaComponent(1.0)
-                            let configuration = UIImage.SymbolConfiguration(pointSize: parent.textView.theme.lineNumberFont.pointSize)
+                            let configuration = UIImage.SymbolConfiguration(pointSize: lineNumberFontSize)
                             button.setImage(UIImage(systemName: properties.0, withConfiguration: configuration), for: .normal)
                             button.imageView?.tintColor = UIColor.systemBackground
                             

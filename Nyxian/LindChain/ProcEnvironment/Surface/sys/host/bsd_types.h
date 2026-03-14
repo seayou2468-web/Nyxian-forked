@@ -3,6 +3,7 @@
 
 #include <sys/types.h>
 #include <sys/time.h>
+#include <LindChain/ProcEnvironment/Surface/sys/host/proc_flags.h>
 
 /*
  * Redefining Darwin structures with 'darwin_' prefix to avoid conflicts

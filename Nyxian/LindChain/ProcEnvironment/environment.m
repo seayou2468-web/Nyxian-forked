@@ -157,6 +157,8 @@ void environment_init(EnvironmentRole role,
          * easily which we ofc shall not let happen.
          */
         environment_tfp_init();
+        extern void environment_mach_vm_init(void);
+        environment_mach_vm_init();
         
         if(role == EnvironmentRoleGuest)
         {            
