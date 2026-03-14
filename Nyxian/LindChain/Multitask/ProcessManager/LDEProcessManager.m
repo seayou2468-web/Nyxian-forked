@@ -142,6 +142,25 @@
                           enableDebugging:(BOOL)enableDebugging
                          forceNewInstance:(BOOL)forceNewInstance
 {
+    return [self spawnProcessWithBundleIdentifier:bundleIdentifier
+                         withKernelSurfaceProcess:proc
+                               doRestartIfRunning:doRestartIfRunning
+                                          outPipe:outp
+                                           inPipe:inp
+                                  enableDebugging:enableDebugging
+                                 forceNewInstance:forceNewInstance
+                              environmentOverrides:nil];
+}
+
+- (pid_t)spawnProcessWithBundleIdentifier:(NSString *)bundleIdentifier
+                 withKernelSurfaceProcess:(ksurface_proc_t*)proc
+                       doRestartIfRunning:(BOOL)doRestartIfRunning
+                                  outPipe:(NSPipe*)outp
+                                   inPipe:(NSPipe*)inp
+                          enableDebugging:(BOOL)enableDebugging
+                         forceNewInstance:(BOOL)forceNewInstance
+                      environmentOverrides:(NSDictionary<NSString *,NSString *> *)environmentOverrides
+{
     LDEWindowSessionApplication *session = nil;
     
     os_unfair_lock_lock(&processes_array_lock);
@@ -213,6 +232,17 @@
     [self enforceSpawnCooldown];
     
     /* creating process */
+    NSMutableDictionary *launchEnvironment = [NSMutableDictionary dictionaryWithDictionary:@{
+        @"HOME": applicationObject.containerPath,
+        @"CFFIXED_USER_HOME": applicationObject.containerPath,
+        @"TMPDIR": [applicationObject.containerPath stringByAppendingPathComponent:@"Tmp"]
+    }];
+
+    if(environmentOverrides != nil)
+    {
+        [launchEnvironment addEntriesFromDictionary:environmentOverrides];
+    }
+
     NSMutableDictionary *dictionary = [NSMutableDictionary dictionaryWithDictionary:@{
         @"LSEndpoint": [Server getTicket],
         @"LSServiceMode": @"spawn",
@@ -220,11 +250,7 @@
         @"LSArguments": @[
             applicationObject.executablePath
         ],
-        @"LSEnvironment": @{
-            @"HOME": applicationObject.containerPath,
-            @"CFFIXED_USER_HOME": applicationObject.containerPath,
-            @"TMPDIR": [applicationObject.containerPath stringByAppendingPathComponent:@"Tmp"]
-        },
+        @"LSEnvironment": [launchEnvironment copy],
         @"LDEDebugEnabled": @(enableDebugging)
     }];
     

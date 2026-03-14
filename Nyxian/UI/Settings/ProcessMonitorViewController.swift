@@ -60,6 +60,17 @@ class ProcessMonitorViewController: UIThemedTableViewController {
     private var sortMode: SortMode = .topCPU
     private var freezeEntries: [FreezeEntry] = []
 
+    private let containerRootURL: URL = {
+        let base = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
+            ?? URL(fileURLWithPath: NSTemporaryDirectory())
+        return base.appendingPathComponent("NXContainers", isDirectory: true)
+    }()
+
+    private var activeContainerName: String? {
+        get { UserDefaults.standard.string(forKey: "nx.active.container") }
+        set { UserDefaults.standard.set(newValue, forKey: "nx.active.container") }
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "Process Monitor"
@@ -83,6 +94,7 @@ class ProcessMonitorViewController: UIThemedTableViewController {
                                                            action: #selector(cycleSortMode))
 
         cpuCoreCount = max(1, queryCPUCoreCountViaSysctl())
+        ensureContainerRootExists()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -161,6 +173,10 @@ class ProcessMonitorViewController: UIThemedTableViewController {
             })
             info.addAction(UIAlertAction(title: "OK", style: .cancel))
             self.present(info, animated: true)
+        })
+
+        alert.addAction(UIAlertAction(title: "Container Studio", style: .default) { _ in
+            self.presentContainerStudioActions()
         })
 
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
@@ -357,7 +373,8 @@ class ProcessMonitorViewController: UIThemedTableViewController {
                                                                  outPipe: nil,
                                                                  in: nil,
                                                                  enableDebugging: true,
-                                                                 forceNewInstance: true)
+                                                                 forceNewInstance: true,
+                                                                 environmentOverrides: self.multitaskLaunchEnvironment())
             if newPID > 0 {
                 NotificationServer.NotifyUser(level: .success, notification: "Launched cloned window pid \(newPID)")
             } else {
@@ -583,6 +600,152 @@ class ProcessMonitorViewController: UIThemedTableViewController {
                 return false
             }
         }
+    }
+
+    private func ensureContainerRootExists() {
+        guard !FileManager.default.fileExists(atPath: containerRootURL.path) else { return }
+        try? FileManager.default.createDirectory(at: containerRootURL,
+                                                 withIntermediateDirectories: true)
+    }
+
+    private func multitaskLaunchEnvironment() -> [String: String]? {
+        guard let activeContainerName, !activeContainerName.isEmpty else { return nil }
+        return [
+            "LC_MULTITASK": "1",
+            "LC_CONTAINER_FOLDER": activeContainerName
+        ]
+    }
+
+    private func containerNames() -> [String] {
+        guard let urls = try? FileManager.default.contentsOfDirectory(at: containerRootURL,
+                                                                      includingPropertiesForKeys: [.isDirectoryKey],
+                                                                      options: [.skipsHiddenFiles]) else {
+            return []
+        }
+        return urls.compactMap { url in
+            let values = try? url.resourceValues(forKeys: [.isDirectoryKey])
+            return values?.isDirectory == true ? url.lastPathComponent : nil
+        }.sorted()
+    }
+
+    private func presentContainerStudioActions() {
+        let alert = UIAlertController(title: "Container Studio",
+                                      message: "Create / switch / delete / edit files",
+                                      preferredStyle: .actionSheet)
+        alert.addAction(UIAlertAction(title: "Create Container", style: .default) { _ in
+            self.presentCreateContainerPrompt()
+        })
+        alert.addAction(UIAlertAction(title: "Switch Active Container", style: .default) { _ in
+            self.presentSwitchContainerPrompt()
+        })
+        alert.addAction(UIAlertAction(title: "Delete Container", style: .destructive) { _ in
+            self.presentDeleteContainerPrompt()
+        })
+        alert.addAction(UIAlertAction(title: "Edit File in Active Container", style: .default) { _ in
+            self.presentContainerFileEditorPrompt()
+        })
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+
+        if let popover = alert.popoverPresentationController {
+            popover.barButtonItem = navigationItem.rightBarButtonItems?.last
+        }
+        present(alert, animated: true)
+    }
+
+    private func presentCreateContainerPrompt() {
+        let prompt = UIAlertController(title: "Create Container", message: nil, preferredStyle: .alert)
+        prompt.addTextField { $0.placeholder = "container-name" }
+        prompt.addAction(UIAlertAction(title: "Create", style: .default) { _ in
+            let name = (prompt.textFields?.first?.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !name.isEmpty else { return }
+            let url = self.containerRootURL.appendingPathComponent(name, isDirectory: true)
+            do {
+                try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+                self.activeContainerName = name
+            } catch {
+                NotificationServer.NotifyUser(level: .error, notification: "Create failed: \(error.localizedDescription)")
+            }
+        })
+        prompt.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        present(prompt, animated: true)
+    }
+
+    private func presentSwitchContainerPrompt() {
+        let names = containerNames()
+        guard !names.isEmpty else {
+            NotificationServer.NotifyUser(level: .error, notification: "No containers available")
+            return
+        }
+
+        let alert = UIAlertController(title: "Switch Container", message: nil, preferredStyle: .actionSheet)
+        for name in names {
+            alert.addAction(UIAlertAction(title: name, style: .default) { _ in
+                self.activeContainerName = name
+            })
+        }
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        if let popover = alert.popoverPresentationController {
+            popover.barButtonItem = navigationItem.rightBarButtonItems?.last
+        }
+        present(alert, animated: true)
+    }
+
+    private func presentDeleteContainerPrompt() {
+        let names = containerNames()
+        guard !names.isEmpty else {
+            NotificationServer.NotifyUser(level: .error, notification: "No containers to delete")
+            return
+        }
+
+        let alert = UIAlertController(title: "Delete Container", message: nil, preferredStyle: .actionSheet)
+        for name in names {
+            alert.addAction(UIAlertAction(title: name, style: .destructive) { _ in
+                do {
+                    try FileManager.default.removeItem(at: self.containerRootURL.appendingPathComponent(name, isDirectory: true))
+                    if self.activeContainerName == name {
+                        self.activeContainerName = self.containerNames().first
+                    }
+                } catch {
+                    NotificationServer.NotifyUser(level: .error, notification: "Delete failed: \(error.localizedDescription)")
+                }
+            })
+        }
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        if let popover = alert.popoverPresentationController {
+            popover.barButtonItem = navigationItem.rightBarButtonItems?.last
+        }
+        present(alert, animated: true)
+    }
+
+    private func presentContainerFileEditorPrompt() {
+        guard let activeContainerName, !activeContainerName.isEmpty else {
+            NotificationServer.NotifyUser(level: .error, notification: "No active container")
+            return
+        }
+
+        let prompt = UIAlertController(title: "Edit File", message: "Container: \(activeContainerName)", preferredStyle: .alert)
+        prompt.addTextField { $0.placeholder = "Relative path (e.g. config/settings.json)" }
+        prompt.addTextField { $0.placeholder = "UTF-8 content" }
+        prompt.addAction(UIAlertAction(title: "Save", style: .default) { _ in
+            let path = (prompt.textFields?[0].text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            let content = prompt.textFields?[1].text ?? ""
+            guard !path.isEmpty else { return }
+
+            let containerURL = self.containerRootURL.appendingPathComponent(activeContainerName, isDirectory: true)
+            let target = containerURL.appendingPathComponent(path)
+            do {
+                try FileManager.default.createDirectory(at: target.deletingLastPathComponent(), withIntermediateDirectories: true)
+                guard let data = content.data(using: .utf8) else {
+                    NotificationServer.NotifyUser(level: .error, notification: "Failed to encode UTF-8")
+                    return
+                }
+                try data.write(to: target, options: .atomic)
+            } catch {
+                NotificationServer.NotifyUser(level: .error, notification: "Save failed: \(error.localizedDescription)")
+            }
+        })
+        prompt.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        present(prompt, animated: true)
     }
 
     private enum MemoryEditError: LocalizedError {

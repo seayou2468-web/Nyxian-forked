@@ -147,6 +147,8 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				LindChain/JBSupport/tshelper,
+				LindChain/ProcEnvironment/Surface/sys/compat/mach_vm.m,
+				UI/Settings/ProcessMonitorViewController.swift,
 			);
 			target = AF9916D82DC8C42200DDF895 /* Nyxian */;
 		};
@@ -281,6 +283,8 @@
 				UI/Settings/CertificateManagement.swift,
 				UI/Settings/CertificateViewController.swift,
 				UI/Settings/KernelLogViewController.swift,
+				LindChain/ProcEnvironment/Surface/sys/compat/mach_vm.m,
+				UI/Settings/ProcessMonitorViewController.swift,
 			);
 			target = 79AF51072F1CBD110055004A /* NyxianForJB */;
 		};
