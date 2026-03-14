@@ -23,7 +23,7 @@ jobs:
       - name: Install Dependencies
         run: |
           set -e
-          brew install ldid dpkg libarchive git curl make clang
+          brew install ldid dpkg libarchive curl
 
       - name: Cache Theos
         id: cache-theos
