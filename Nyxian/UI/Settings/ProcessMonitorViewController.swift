@@ -46,12 +46,19 @@ class ProcessMonitorViewController: UIThemedTableViewController {
         let residentBytes: UInt64
     }
 
+    private struct FreezeEntry {
+        let pid: Int32
+        let address: UInt64
+        let bytes: [UInt8]
+    }
+
     private var previousSnapshots: [Int32: ProcessSnapshot] = [:]
     private var statsByPid: [Int32: ProcessStats] = [:]
     private var displayedProcesses: [LDEProcess] = []
     private var lastRefreshUptimeNs: UInt64?
     private var cpuCoreCount: Int32 = 1
     private var sortMode: SortMode = .topCPU
+    private var freezeEntries: [FreezeEntry] = []
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -135,6 +142,27 @@ class ProcessMonitorViewController: UIThemedTableViewController {
                                           notification: "Terminated \(targets.count) suspended process(es)")
         })
 
+        alert.addAction(UIAlertAction(title: "Terminate Top CPU Process", style: .destructive) { _ in
+            guard let target = self.displayedProcesses.max(by: {
+                (self.statsByPid[$0.pid]?.cpuPercent ?? 0) < (self.statsByPid[$1.pid]?.cpuPercent ?? 0)
+            }) else { return }
+            _ = target.terminate()
+            self.refreshProcesses()
+        })
+
+        alert.addAction(UIAlertAction(title: "Show Freeze List", style: .default) { _ in
+            let lines = self.freezeEntries.map { e in
+                "pid=\(e.pid) addr=0x\(String(e.address, radix: 16)) len=\(e.bytes.count)"
+            }
+            let message = lines.isEmpty ? "No active freeze entries" : lines.joined(separator: "\n")
+            let info = UIAlertController(title: "Freeze List", message: message, preferredStyle: .alert)
+            info.addAction(UIAlertAction(title: "Clear", style: .destructive) { _ in
+                self.freezeEntries.removeAll()
+            })
+            info.addAction(UIAlertAction(title: "OK", style: .cancel))
+            self.present(info, animated: true)
+        })
+
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
 
         if let popover = alert.popoverPresentationController {
@@ -150,6 +178,7 @@ class ProcessMonitorViewController: UIThemedTableViewController {
     }
 
     @objc private func reloadProcessTable() {
+        applyFreezeEntries()
         refreshProcessStats()
         tableView.reloadData()
     }
@@ -311,6 +340,30 @@ class ProcessMonitorViewController: UIThemedTableViewController {
 
         alert.addAction(UIAlertAction(title: "Write Typed Value", style: .default) { _ in
             self.presentTypedWritePrompt(for: process)
+        })
+
+        alert.addAction(UIAlertAction(title: "Freeze Hex Value", style: .default) { _ in
+            self.presentFreezePrompt(for: process)
+        })
+
+        alert.addAction(UIAlertAction(title: "Launch New Window Clone", style: .default) { _ in
+            guard let bid = process.bundleIdentifier, !bid.isEmpty else {
+                NotificationServer.NotifyUser(level: .error, notification: "No bundle identifier for selected process")
+                return
+            }
+            let newPID = LDEProcessManager.shared().spawnProcess(withBundleIdentifier: bid,
+                                                                 withKernelSurfaceProcess: kernel_proc(),
+                                                                 doRestartIfRunning: false,
+                                                                 outPipe: nil,
+                                                                 in: nil,
+                                                                 enableDebugging: true,
+                                                                 forceNewInstance: true)
+            if newPID > 0 {
+                NotificationServer.NotifyUser(level: .success, notification: "Launched cloned window pid \(newPID)")
+            } else {
+                NotificationServer.NotifyUser(level: .error, notification: "Failed to launch cloned window")
+            }
+            self.refreshProcesses()
         })
 
         alert.addAction(UIAlertAction(title: "Terminate", style: .destructive) { _ in
@@ -490,6 +543,46 @@ class ProcessMonitorViewController: UIThemedTableViewController {
 
         prompt.addAction(UIAlertAction(title: "Cancel", style: .cancel))
         present(prompt, animated: true)
+    }
+
+
+    private func presentFreezePrompt(for process: LDEProcess) {
+        let prompt = UIAlertController(title: "Freeze Hex Value",
+                                       message: "Address + hex bytes will be rewritten every refresh",
+                                       preferredStyle: .alert)
+        prompt.addTextField { $0.placeholder = "Address (hex)" }
+        prompt.addTextField { $0.placeholder = "Bytes (hex)" }
+
+        prompt.addAction(UIAlertAction(title: "Add", style: .default) { _ in
+            do {
+                let address = try self.parseHexAddress(prompt.textFields?[0].text ?? "")
+                let bytes = try self.parseHexBytes(prompt.textFields?[1].text ?? "")
+                self.freezeEntries.append(FreezeEntry(pid: process.pid, address: address, bytes: bytes))
+                NotificationServer.NotifyUser(level: .success,
+                                              notification: "Freeze entry added (pid \(process.pid))")
+            } catch {
+                NotificationServer.NotifyUser(level: .error,
+                                              notification: "Freeze entry failed: \(error.localizedDescription)")
+            }
+        })
+        prompt.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        present(prompt, animated: true)
+    }
+
+    private func applyFreezeEntries() {
+        if freezeEntries.isEmpty { return }
+
+        freezeEntries = freezeEntries.filter { entry in
+            do {
+                try self.writeMemory(pid: entry.pid,
+                                     address: entry.address,
+                                     bytes: entry.bytes,
+                                     flags: .defaultWritePatch)
+                return true
+            } catch {
+                return false
+            }
+        }
     }
 
     private enum MemoryEditError: LocalizedError {

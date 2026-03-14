@@ -125,6 +125,23 @@
                                    inPipe:(NSPipe*)inp
                           enableDebugging:(BOOL)enableDebugging
 {
+    return [self spawnProcessWithBundleIdentifier:bundleIdentifier
+                         withKernelSurfaceProcess:proc
+                               doRestartIfRunning:doRestartIfRunning
+                                          outPipe:outp
+                                           inPipe:inp
+                                  enableDebugging:enableDebugging
+                                  forceNewInstance:NO];
+}
+
+- (pid_t)spawnProcessWithBundleIdentifier:(NSString *)bundleIdentifier
+                 withKernelSurfaceProcess:(ksurface_proc_t*)proc
+                       doRestartIfRunning:(BOOL)doRestartIfRunning
+                                  outPipe:(NSPipe*)outp
+                                   inPipe:(NSPipe*)inp
+                          enableDebugging:(BOOL)enableDebugging
+                         forceNewInstance:(BOOL)forceNewInstance
+{
     LDEWindowSessionApplication *session = nil;
     
     os_unfair_lock_lock(&processes_array_lock);
@@ -134,6 +151,10 @@
         if(!process || ![process.bundleIdentifier isEqualToString:bundleIdentifier]) continue;
         else
         {
+            if(forceNewInstance)
+            {
+                continue;
+            }
             if(doRestartIfRunning)
             {
                 if(UIDevice.currentDevice.userInterfaceIdiom == UIUserInterfaceIdiomPad)
