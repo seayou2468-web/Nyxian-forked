@@ -25,7 +25,7 @@ jobs:
       - name: Install Dependencies
         run: |
           set -e
-          brew install ldid dpkg libarchive curl
+          brew install ldid dpkg libarchive curl cmake ninja
 
       # 3. Theos キャッシュ
       - name: Cache Theos
@@ -82,7 +82,7 @@ jobs:
             Nyxian/LindChain/Clang.xcframework
             Nyxian/LindChain/JBSupport/libroot.a
             Nyxian/LindChain/JBSupport/tshelper
-          key: build-artifacts-${{ runner.os }}-${{ hashFiles('Makefile', 'LLVM-On-iOS/Makefile', 'libroot/Makefile', 'TrollStore/Makefile') }}
+          key: build-artifacts-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'libroot/CMakeLists.txt', 'LLVM-On-iOS/CMakeLists.txt', 'TrollStore/CMakeLists.txt') }}
 
       # 7. Theos 環境設定
       - name: Setup Environment
@@ -94,16 +94,20 @@ jobs:
         run: |
           set -e
           $HOME/theos/bin/update-theos
-      # 8. Jailed ビルド
-      - name: Build Jailed
+
+      # 8. CMake を使用したビルド
+      - name: Build with CMake & Ninja
         timeout-minutes: 1200
         run: |
           set -e
-          make jailed
+          mkdir -p build
+          cd build
+          cmake -G Ninja ..
+          ninja jailed
 
       # 9. 成果物アップロード
       - name: Upload Jailed
         uses: actions/upload-artifact@v4
         with:
           name: nyxian.ipa
-          path: nyxian.ipa
+          path: build/Nyxian.ipa
