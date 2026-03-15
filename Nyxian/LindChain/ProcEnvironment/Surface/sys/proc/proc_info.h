@@ -24,6 +24,6 @@
 
 #import <LindChain/ProcEnvironment/Syscall/mach_syscall_server.h>
 
-DECLARE_SYSCALL_HANDLER(proc_info);
+DEFINE_SYSCALL_HANDLER(proc_info);
 
 #endif /* SURFACE_SYS_PROC_INFO_H */

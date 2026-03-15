@@ -33,46 +33,118 @@
 #endif
 
 /* KERN constants */
+#ifndef KERN_OSTYPE
 #define KERN_OSTYPE           1
+#endif
+#ifndef KERN_OSRELEASE
 #define KERN_OSRELEASE        2
+#endif
+#ifndef KERN_OSVERSION
 #define KERN_OSVERSION        3
+#endif
+#ifndef KERN_VERSION
 #define KERN_VERSION          4
+#endif
+#ifndef KERN_MAXPROC
 #define KERN_MAXPROC          6
+#endif
+#ifndef KERN_MAXFILES
 #define KERN_MAXFILES         7
+#endif
+#ifndef KERN_HOSTNAME
 #define KERN_HOSTNAME        10
+#endif
+#ifndef KERN_PROC
 #define KERN_PROC            14
+#endif
+#ifndef KERN_NGROUPS
 #define KERN_NGROUPS         18
+#endif
+#ifndef KERN_SAVED_IDS
 #define KERN_SAVED_IDS       20
+#endif
+#ifndef KERN_BOOTARGS
 #define KERN_BOOTARGS        38
+#endif
+#ifndef KERN_PROCARGS
 #define KERN_PROCARGS        39
+#endif
+#ifndef KERN_PROCARGS2
 #define KERN_PROCARGS2       49
+#endif
+#ifndef KERN_MAXFILESPERPROC
 #define KERN_MAXFILESPERPROC 67
+#endif
+#ifndef KERN_OSPRODUCTVERSION
 #define KERN_OSPRODUCTVERSION 70
+#endif
 
 /* KERN_PROC subtypes */
+#ifndef KERN_PROC_ALL
 #define KERN_PROC_ALL         0
+#endif
+#ifndef KERN_PROC_PID
 #define KERN_PROC_PID         1
+#endif
+#ifndef KERN_PROC_RUID
 #define KERN_PROC_RUID        2
+#endif
+#ifndef KERN_PROC_SESSION
 #define KERN_PROC_SESSION     3
+#endif
+#ifndef KERN_PROC_UID
 #define KERN_PROC_UID         5
+#endif
 
 /* HW constants */
+#ifndef HW_MACHINE
 #define HW_MACHINE            1
+#endif
+#ifndef HW_MODEL
 #define HW_MODEL              2
+#endif
+#ifndef HW_NCPU
 #define HW_NCPU               3
+#endif
+#ifndef HW_PAGESIZE
 #define HW_PAGESIZE           7
+#endif
+#ifndef HW_OPTIONAL
 #define HW_OPTIONAL           18
+#endif
+#ifndef HW_PHYSMEM
 #define HW_PHYSMEM            19
+#endif
+#ifndef HW_USERMEM
 #define HW_USERMEM            20
+#endif
+#ifndef HW_VECTORUNIT
 #define HW_VECTORUNIT         22
+#endif
+#ifndef HW_BUS_FREQ
 #define HW_BUS_FREQ           23
+#endif
+#ifndef HW_CPU_FREQ
 #define HW_CPU_FREQ           24
+#endif
+#ifndef HW_CACHELINE
 #define HW_CACHELINE          25
+#endif
+#ifndef HW_MEMSIZE
 #define HW_MEMSIZE            27
+#endif
+#ifndef HW_TB_FREQ
 #define HW_TB_FREQ            28
+#endif
+#ifndef HW_CPU_TYPE
 #define HW_CPU_TYPE           30
+#endif
+#ifndef HW_CPU_SUBTYPE
 #define HW_CPU_SUBTYPE        31
+#endif
+#ifndef HW_CPU_FAMILY
 #define HW_CPU_FAMILY         32
+#endif
 
 /* --- sysctl request structure --- */
 typedef struct {

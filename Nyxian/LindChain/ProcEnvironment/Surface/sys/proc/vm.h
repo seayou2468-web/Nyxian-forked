@@ -24,11 +24,11 @@
 
 #import <LindChain/ProcEnvironment/Syscall/mach_syscall_server.h>
 
-DECLARE_SYSCALL_HANDLER(vm_read);
-DECLARE_SYSCALL_HANDLER(vm_write);
-DECLARE_SYSCALL_HANDLER(vm_allocate);
-DECLARE_SYSCALL_HANDLER(vm_deallocate);
-DECLARE_SYSCALL_HANDLER(vm_protect);
-DECLARE_SYSCALL_HANDLER(vm_region);
+DEFINE_SYSCALL_HANDLER(vm_read);
+DEFINE_SYSCALL_HANDLER(vm_write);
+DEFINE_SYSCALL_HANDLER(vm_allocate);
+DEFINE_SYSCALL_HANDLER(vm_deallocate);
+DEFINE_SYSCALL_HANDLER(vm_protect);
+DEFINE_SYSCALL_HANDLER(vm_region);
 
 #endif /* SURFACE_SYS_VM_H */
