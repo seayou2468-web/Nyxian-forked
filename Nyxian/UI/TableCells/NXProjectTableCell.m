@@ -24,15 +24,20 @@
 
 @interface NXProjectTableCell ()
 
-@property (nonatomic, strong) NSLayoutConstraint *textCenterConstraint;
-@property (nonatomic, strong) NSLayoutConstraint *textCenterConstraintBox;
-@property (nonatomic, strong) NSLayoutConstraint *detailBelowTitleConstraint;
-@property (nonatomic, strong) NSArray<NSLayoutConstraint*> *imageConstraints;
+@property (nonatomic, strong, readwrite) UIImageView *customImageView;
+@property (nonatomic, strong, readwrite) UILabel *customTitleLabel;
+@property (nonatomic, strong, readwrite) UILabel *customDetailLabel;
 
-@property (nonatomic, strong) NSLayoutConstraint *leadingConstraintWImage;
-@property (nonatomic, strong) NSLayoutConstraint *leadingConstraintWHImage;
-@property (nonatomic, strong) NSLayoutConstraint *detailLeadingConstraintWImage;
-@property (nonatomic, strong) NSLayoutConstraint *detailLeadingConstraintWHImage;
+@property (nonatomic, strong) NSLayoutConstraint *titleCenterYConstraint;
+@property (nonatomic, strong) NSLayoutConstraint *titleTopConstraint;
+
+@property (nonatomic, strong) NSLayoutConstraint *titleLeadingWithImageConstraint;
+@property (nonatomic, strong) NSLayoutConstraint *titleLeadingWithoutImageConstraint;
+
+@property (nonatomic, strong) NSLayoutConstraint *detailLeadingWithImageConstraint;
+@property (nonatomic, strong) NSLayoutConstraint *detailLeadingWithoutImageConstraint;
+
+@property (nonatomic, strong) NSArray<NSLayoutConstraint *> *imageConstraints;
 
 @end
 
@@ -41,71 +46,80 @@
 - (instancetype)initWithStyle:(UITableViewCellStyle)style
               reuseIdentifier:(NSString *)reuseIdentifier
 {
-    self = [super initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:reuseIdentifier];
+    self = [super initWithStyle:UITableViewCellStyleDefault reuseIdentifier:reuseIdentifier];
     if(self)
     {
+        [self setupViews];
         [self setupConstraints];
     }
     return self;
 }
 
-- (void)setupConstraints
+- (void)setupViews
 {
-    self.textLabel.numberOfLines = 1;
-    self.detailTextLabel.numberOfLines = 1;
-    self.textLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightBold];
-    self.detailTextLabel.font = [UIFont systemFontOfSize:10];
+    // Hide standard views to avoid interference
+    self.textLabel.hidden = YES;
+    self.detailTextLabel.hidden = YES;
+    self.imageView.hidden = YES;
 
-    self.imageView.translatesAutoresizingMaskIntoConstraints = NO;
-    self.textLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    self.detailTextLabel.translatesAutoresizingMaskIntoConstraints = NO;
-
-    CGFloat imageSize = 50;
-
-    self.imageConstraints = @[
-        [self.imageView.widthAnchor constraintEqualToConstant:imageSize],
-        [self.imageView.heightAnchor constraintEqualToConstant:imageSize],
-        [self.imageView.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:16],
-        [self.imageView.centerYAnchor constraintEqualToAnchor:self.contentView.centerYAnchor],
-    ];
-
-    self.leadingConstraintWImage = [self.textLabel.leadingAnchor constraintEqualToAnchor:self.imageView.trailingAnchor constant:16];
-    self.leadingConstraintWHImage = [self.textLabel.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:16];
-    self.detailLeadingConstraintWImage = [self.detailTextLabel.leadingAnchor constraintEqualToAnchor:self.imageView.trailingAnchor constant:16];
-    self.detailLeadingConstraintWHImage = [self.detailTextLabel.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:16];
-
-    self.textCenterConstraint = [self.textLabel.centerYAnchor constraintEqualToAnchor:self.contentView.centerYAnchor];
-    self.textCenterConstraintBox = [self.textLabel.centerYAnchor constraintEqualToAnchor:self.contentView.centerYAnchor constant:-10];
-    self.detailBelowTitleConstraint = [self.detailTextLabel.topAnchor constraintEqualToAnchor:self.textLabel.bottomAnchor constant:4];
-
-    [NSLayoutConstraint activateConstraints:@[
-        self.textCenterConstraint,
-        self.detailBelowTitleConstraint,
-
-        [self.textLabel.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-16],
-        [self.detailTextLabel.trailingAnchor constraintEqualToAnchor:self.textLabel.trailingAnchor]
-    ]];
-
-    [NSLayoutConstraint activateConstraints:self.imageConstraints];
-    self.leadingConstraintWImage.active = YES;
-    self.detailLeadingConstraintWImage.active = YES;
-
-    if(@available(iOS 26.0, *))
-    {
-        self.imageView.layer.cornerRadius = 15;
+    self.customImageView = [[UIImageView alloc] init];
+    self.customImageView.translatesAutoresizingMaskIntoConstraints = NO;
+    self.customImageView.contentMode = UIViewContentModeScaleAspectFill;
+    self.customImageView.clipsToBounds = YES;
+    self.customImageView.layer.borderWidth = 0.5;
+    self.customImageView.layer.borderColor = UIColor.grayColor.CGColor;
+    if (@available(iOS 26.0, *)) {
+        self.customImageView.layer.cornerRadius = 15;
+    } else {
+        self.customImageView.layer.cornerRadius = 10;
     }
-    else
-    {
-        self.imageView.layer.cornerRadius = 10;
-    }
+    [self.contentView addSubview:self.customImageView];
 
-    self.imageView.clipsToBounds = YES;
-    self.imageView.layer.borderWidth = 0.5;
-    self.imageView.layer.borderColor = UIColor.grayColor.CGColor;
+    self.customTitleLabel = [[UILabel alloc] init];
+    self.customTitleLabel.translatesAutoresizingMaskIntoConstraints = NO;
+    self.customTitleLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightBold];
+    self.customTitleLabel.numberOfLines = 1;
+    self.customTitleLabel.textColor = [UIColor labelColor];
+    [self.contentView addSubview:self.customTitleLabel];
+
+    self.customDetailLabel = [[UILabel alloc] init];
+    self.customDetailLabel.translatesAutoresizingMaskIntoConstraints = NO;
+    self.customDetailLabel.font = [UIFont systemFontOfSize:10];
+    self.customDetailLabel.numberOfLines = 1;
+    self.customDetailLabel.textColor = [UIColor secondaryLabelColor];
+    [self.contentView addSubview:self.customDetailLabel];
 
     self.separatorInset = UIEdgeInsetsZero;
     self.layoutMargins = UIEdgeInsetsZero;
     self.preservesSuperviewLayoutMargins = NO;
+}
+
+- (void)setupConstraints
+{
+    CGFloat imageSize = 50;
+
+    self.imageConstraints = @[
+        [self.customImageView.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:16],
+        [self.customImageView.centerYAnchor constraintEqualToAnchor:self.contentView.centerYAnchor],
+        [self.customImageView.widthAnchor constraintEqualToConstant:imageSize],
+        [self.customImageView.heightAnchor constraintEqualToConstant:imageSize]
+    ];
+    [NSLayoutConstraint activateConstraints:self.imageConstraints];
+
+    self.titleLeadingWithImageConstraint = [self.customTitleLabel.leadingAnchor constraintEqualToAnchor:self.customImageView.trailingAnchor constant:16];
+    self.titleLeadingWithoutImageConstraint = [self.customTitleLabel.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:16];
+
+    self.detailLeadingWithImageConstraint = [self.customDetailLabel.leadingAnchor constraintEqualToAnchor:self.customImageView.trailingAnchor constant:16];
+    self.detailLeadingWithoutImageConstraint = [self.customDetailLabel.leadingAnchor constraintEqualToAnchor:self.contentView.leadingAnchor constant:16];
+
+    self.titleCenterYConstraint = [self.customTitleLabel.centerYAnchor constraintEqualToAnchor:self.contentView.centerYAnchor];
+    self.titleTopConstraint = [self.customTitleLabel.topAnchor constraintEqualToAnchor:self.contentView.centerYAnchor constant:-10];
+
+    [NSLayoutConstraint activateConstraints:@[
+        [self.customTitleLabel.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-16],
+        [self.customDetailLabel.trailingAnchor constraintEqualToAnchor:self.contentView.trailingAnchor constant:-16],
+        [self.customDetailLabel.topAnchor constraintEqualToAnchor:self.customTitleLabel.bottomAnchor constant:4]
+    ]];
 }
 
 - (void)configureWithDisplayName:(NSString*)displayName
@@ -115,55 +129,64 @@
                     showBundleID:(BOOL)showBundleID
                        showArrow:(BOOL)showArrow
 {
-    self.textLabel.text = displayName;
-    self.imageView.image = image ?: [UIImage imageNamed:@"DefaultIcon"];
+    // Clean up before configuring
+    [self resetConstraints];
+
+    self.customTitleLabel.text = displayName;
+    self.customImageView.image = image ?: [UIImage imageNamed:@"DefaultIcon"];
     self.accessoryType = showArrow ? UITableViewCellAccessoryDisclosureIndicator : UITableViewCellAccessoryNone;
 
-    if(showBundleID)
-    {
-        self.detailTextLabel.text = bundleIdentifier;
-        self.detailTextLabel.hidden = NO;
-        self.detailBelowTitleConstraint.active = YES;
-        self.textCenterConstraint.active = false;
-        self.textCenterConstraintBox.active = true;
-    }
-    else
-    {
-        self.detailTextLabel.text = @"";
-        self.detailTextLabel.hidden = YES;
-        self.detailBelowTitleConstraint.active = NO;
-        self.textCenterConstraint.active = true;
-        self.textCenterConstraintBox.active = false;
+    if (showBundleID) {
+        self.customDetailLabel.text = bundleIdentifier;
+        self.customDetailLabel.hidden = NO;
+        self.titleCenterYConstraint.active = NO;
+        self.titleTopConstraint.active = YES;
+    } else {
+        self.customDetailLabel.text = nil;
+        self.customDetailLabel.hidden = YES;
+        self.titleTopConstraint.active = NO;
+        self.titleCenterYConstraint.active = YES;
     }
 
-    if(showAppIcon)
-    {
-        self.imageView.hidden = NO;
-        [NSLayoutConstraint activateConstraints:self.imageConstraints];
-        self.leadingConstraintWHImage.active = NO;
-        self.leadingConstraintWImage.active = YES;
-        self.detailLeadingConstraintWHImage.active = NO;
-        self.detailLeadingConstraintWImage.active = YES;
+    if (showAppIcon) {
+        self.customImageView.hidden = NO;
+        self.titleLeadingWithoutImageConstraint.active = NO;
+        self.titleLeadingWithImageConstraint.active = YES;
+        self.detailLeadingWithoutImageConstraint.active = NO;
+        self.detailLeadingWithImageConstraint.active = YES;
+    } else {
+        self.customImageView.hidden = YES;
+        self.titleLeadingWithImageConstraint.active = NO;
+        self.titleLeadingWithoutImageConstraint.active = YES;
+        self.detailLeadingWithImageConstraint.active = NO;
+        self.detailLeadingWithoutImageConstraint.active = YES;
     }
-    else
-    {
-        self.imageView.hidden = YES;
-        self.leadingConstraintWImage.active = NO;
-        self.leadingConstraintWHImage.active = YES;
-        self.detailLeadingConstraintWImage.active = NO;
-        self.detailLeadingConstraintWHImage.active = YES;
-    }
+
+    [self setNeedsLayout];
+}
+
+- (void)resetConstraints
+{
+    self.titleLeadingWithImageConstraint.active = NO;
+    self.titleLeadingWithoutImageConstraint.active = NO;
+    self.detailLeadingWithImageConstraint.active = NO;
+    self.detailLeadingWithoutImageConstraint.active = NO;
+    self.titleCenterYConstraint.active = NO;
+    self.titleTopConstraint.active = NO;
 }
 
 - (void)prepareForReuse
 {
     [super prepareForReuse];
-    self.textLabel.text = nil;
-    self.detailTextLabel.text = nil;
-    self.imageView.image = nil;
+    self.customTitleLabel.text = nil;
+    self.customDetailLabel.text = nil;
+    self.customImageView.image = nil;
     self.accessoryType = UITableViewCellAccessoryNone;
-    self.imageView.hidden = NO;
-    self.detailTextLabel.hidden = NO;
+
+    self.customImageView.hidden = YES;
+    self.customDetailLabel.hidden = YES;
+
+    [self resetConstraints];
 }
 
 + (NSString *)reuseIdentifier
