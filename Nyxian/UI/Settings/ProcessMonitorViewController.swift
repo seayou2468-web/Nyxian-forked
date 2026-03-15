@@ -95,6 +95,7 @@ class ProcessMonitorViewController: UIThemedTableViewController {
 
         cpuCoreCount = max(1, queryCPUCoreCountViaSysctl())
         ensureContainerRootExists()
+        verifyUserspaceVirtualizationLayerIfNeeded()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -783,6 +784,24 @@ class ProcessMonitorViewController: UIThemedTableViewController {
         }
     }
 
+
+    private func verifyUserspaceVirtualizationLayerIfNeeded() {
+#if !JAILBREAK_ENV
+        guard liveProcessIsAvailable() else {
+            NotificationServer.NotifyUser(level: .warning,
+                                          notification: "LiveProcess extension is unavailable; userspace virtualization layer is inactive on this build.")
+            return
+        }
+
+        var selfTask: mach_port_name_t = 0
+        let kr = environment_task_for_pid(mach_task_self_, getpid(), &selfTask)
+        if kr != KERN_SUCCESS || selfTask == MACH_PORT_NULL {
+            NotificationServer.NotifyUser(level: .warning,
+                                          notification: "Userspace virtualization layer handshake failed; non-jailbreak task virtualization is not ready.")
+        }
+#endif
+    }
+
     private func parseHexAddress(_ raw: String) throws -> UInt64 {
         let normalized = raw
             .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -873,7 +892,7 @@ class ProcessMonitorViewController: UIThemedTableViewController {
 
     private func taskPort(for pid: Int32) throws -> mach_port_name_t {
         var task: mach_port_name_t = 0
-        let tkr = task_for_pid(mach_task_self_, pid, &task)
+        let tkr = environment_task_for_pid(mach_task_self_, pid, &task)
         guard tkr == KERN_SUCCESS else { throw MemoryEditError.taskForPidFailed(tkr) }
         return task
     }
