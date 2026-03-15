@@ -886,11 +886,11 @@ class ProcessMonitorViewController: UIThemedTableViewController {
 
         let kr: kern_return_t = local.withUnsafeMutableBytes { rawBuffer in
             guard let base = rawBuffer.baseAddress else { return KERN_INVALID_ARGUMENT }
-            return mach_vm_read_overwrite(task,
-                                          mach_vm_address_t(address),
-                                          mach_vm_size_t(length),
-                                          mach_vm_address_t(UInt(bitPattern: base)),
-                                          &outSize)
+            return nx_mach_vm_read(task,
+                                   mach_vm_address_t(address),
+                                   mach_vm_size_t(length),
+                                   base,
+                                   &outSize)
         }
 
         guard kr == KERN_SUCCESS else { throw MemoryEditError.vmReadFailed(kr) }
@@ -903,19 +903,18 @@ class ProcessMonitorViewController: UIThemedTableViewController {
                              flags: NXKernelVMFlags) throws {
         let task = try taskPort(for: pid)
 
-        let protectKR = mach_vm_protect(task,
-                                        mach_vm_address_t(address),
-                                        mach_vm_size_t(bytes.count),
-                                        0,
-                                        vm_prot_t(flags.rawValue))
+        let protectKR = nx_mach_vm_protect(task,
+                                          mach_vm_address_t(address),
+                                          mach_vm_size_t(bytes.count),
+                                          vm_prot_t(flags.rawValue))
 
         var mutableBytes = bytes
         let writeKR: kern_return_t = mutableBytes.withUnsafeMutableBytes { rawBuffer in
             guard let base = rawBuffer.baseAddress else { return KERN_INVALID_ARGUMENT }
-            return mach_vm_write(task,
-                                 mach_vm_address_t(address),
-                                 vm_offset_t(UInt(bitPattern: base)),
-                                 mach_msg_type_number_t(bytes.count))
+            return nx_mach_vm_write(task,
+                                mach_vm_address_t(address),
+                                base,
+                                mach_msg_type_number_t(bytes.count))
         }
 
         if writeKR == KERN_SUCCESS { return }

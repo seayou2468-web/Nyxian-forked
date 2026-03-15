@@ -7,6 +7,53 @@
 #import <LindChain/ProcEnvironment/Surface/permit.h>
 #import <LindChain/ProcEnvironment/tfp.h>
 #include <mach/mach_vm.h>
+#include <stdint.h>
+
+kern_return_t nx_mach_vm_read(task_t target_task,
+                              mach_vm_address_t address,
+                              mach_vm_size_t size,
+                              void *buffer,
+                              mach_vm_size_t *outSize)
+{
+    if(buffer == NULL || outSize == NULL)
+    {
+        return KERN_INVALID_ARGUMENT;
+    }
+
+    return mach_vm_read_overwrite(target_task,
+                                  address,
+                                  size,
+                                  (mach_vm_address_t)(uintptr_t)buffer,
+                                  outSize);
+}
+
+kern_return_t nx_mach_vm_write(task_t target_task,
+                               mach_vm_address_t address,
+                               const void *buffer,
+                               mach_msg_type_number_t length)
+{
+    if(buffer == NULL)
+    {
+        return KERN_INVALID_ARGUMENT;
+    }
+
+    return mach_vm_write(target_task,
+                         address,
+                         (vm_offset_t)(uintptr_t)buffer,
+                         length);
+}
+
+kern_return_t nx_mach_vm_protect(task_t target_task,
+                                 mach_vm_address_t address,
+                                 mach_vm_size_t size,
+                                 vm_prot_t protection)
+{
+    return mach_vm_protect(target_task,
+                           address,
+                           size,
+                           FALSE,
+                           protection);
+}
 
 DEFINE_SYSCALL_HANDLER(mach_vm_read)
 {

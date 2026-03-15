@@ -40,6 +40,7 @@
 #import <LindChain/Utils/LDEThreadGroupController.h>
 #import <LindChain/JBSupport/jbroot.h>
 #import <LindChain/JBSupport/Shell.h>
+#import <LindChain/ProcEnvironment/Surface/sys/compat/mach_vm.h>
 
 /* Project Headers */
 #import <LindChain/Project/NXUser.h>
