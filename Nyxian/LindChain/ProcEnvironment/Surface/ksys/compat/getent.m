@@ -19,12 +19,10 @@
  along with Nyxian. If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef PROCENVIRONMENT_SYSCALL_H
-#define PROCENVIRONMENT_SYSCALL_H
+#import <LindChain/ProcEnvironment/Surface/ksys/compat/getent.h>
+#import <LindChain/ProcEnvironment/Surface/proc/def.h>
 
-#import <LindChain/ProcEnvironment/Surface/ksys/syscall.h>
-#import <stdint.h>
-
-int64_t environment_syscall(uint32_t syscall_num, ...);
-
-#endif /* PROCENVIRONMENT_SYSCALL_H */
+DEFINE_SYSCALL_HANDLER(getent)
+{
+    return proc_getentitlements(sys_proc_snapshot_);
+}

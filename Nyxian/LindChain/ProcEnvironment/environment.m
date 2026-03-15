@@ -21,6 +21,7 @@
 
 #import <LindChain/ProcEnvironment/environment.h>
 #import <LindChain/ProcEnvironment/syscall.h>
+#import <LindChain/ProcEnvironment/libmach.h>
 #import <LindChain/ProcEnvironment/Surface/extra/relax.h>
 #import <LindChain/Debugger/MachServer.h>
 #import <LindChain/LiveContainer/LCBootstrap.h>

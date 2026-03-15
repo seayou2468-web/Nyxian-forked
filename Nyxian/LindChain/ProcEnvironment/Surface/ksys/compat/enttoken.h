@@ -19,12 +19,16 @@
  along with Nyxian. If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef PROCENVIRONMENT_SYSCALL_H
-#define PROCENVIRONMENT_SYSCALL_H
+#ifndef SURFACE_SYS_ENTTOKEN_H
+#define SURFACE_SYS_ENTTOKEN_H
 
-#import <LindChain/ProcEnvironment/Surface/ksys/syscall.h>
-#import <stdint.h>
+#import <LindChain/ProcEnvironment/Surface/surface.h>
 
-int64_t environment_syscall(uint32_t syscall_num, ...);
+#define ET_CREATE       0   /* creates entitlements token */
+#define ET_CONSUME      1   /* consumes entitlements token */
+#define ET_VERIFY       2   /* verifies entitlements token */
+#define ET_VERIFY_MACH  3   /* verifies special mach entitlements token */
 
-#endif /* PROCENVIRONMENT_SYSCALL_H */
+DECLARE_SYSCALL_HANDLER(enttoken);
+
+#endif /* SURFACE_SYS_ENTTOKEN_H */

@@ -19,12 +19,12 @@
  along with Nyxian. If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef PROCENVIRONMENT_SYSCALL_H
-#define PROCENVIRONMENT_SYSCALL_H
+#import <LindChain/ProcEnvironment/Surface/ksys/proc/exit.h>
 
-#import <LindChain/ProcEnvironment/Surface/ksys/syscall.h>
-#import <stdint.h>
-
-int64_t environment_syscall(uint32_t syscall_num, ...);
-
-#endif /* PROCENVIRONMENT_SYSCALL_H */
+DEFINE_SYSCALL_HANDLER(exit)
+{
+    kvo_rdlock(sys_proc_);
+    sys_proc_->nyx.ret = (uint8_t)(int)args[0];
+    kvo_unlock(sys_proc_);
+    sys_return;
+}

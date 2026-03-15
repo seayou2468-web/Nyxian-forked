@@ -28,7 +28,7 @@
 #import <LindChain/LiveContainer/Tweaks/libproc.h>
 #import <LindChain/ProcEnvironment/Surface/surface.h>
 #import <LindChain/ProcEnvironment/Surface/proc/proc.h>
-#import <LindChain/ProcEnvironment/Surface/sys/host/proc_flags.h>
+#import <LindChain/ProcEnvironment/Surface/ksys/host/proc_flags.h>
 
 DEFINE_HOOK(proc_listallpids, int, (void *buffer,
                                     int buffersize))

@@ -26,7 +26,7 @@
 #import <LindChain/ProcEnvironment/environment.h>
 #import <LindChain/Utils/Swizzle.h>
 #import <LindChain/ProcEnvironment/proxy.h>
-#import <LindChain/ProcEnvironment/Surface/sys/syscall.h>
+#import <LindChain/ProcEnvironment/Surface/ksys/syscall.h>
 #import <LindChain/ProcEnvironment/syscall.h>
 
 #pragma mark - Audio background mode fix (Fixes playing music in spotify while spotify is not in nyxians foreground)

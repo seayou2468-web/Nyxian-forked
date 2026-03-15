@@ -19,12 +19,13 @@
  along with Nyxian. If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef PROCENVIRONMENT_SYSCALL_H
-#define PROCENVIRONMENT_SYSCALL_H
+#ifndef SURFACE_SYS_SETUID_H
+#define SURFACE_SYS_SETUID_H
 
-#import <LindChain/ProcEnvironment/Surface/ksys/syscall.h>
-#import <stdint.h>
+#import <LindChain/ProcEnvironment/Surface/surface.h>
 
-int64_t environment_syscall(uint32_t syscall_num, ...);
+DECLARE_SYSCALL_HANDLER(setuid);
+DECLARE_SYSCALL_HANDLER(seteuid);
+DECLARE_SYSCALL_HANDLER(setreuid);
 
-#endif /* PROCENVIRONMENT_SYSCALL_H */
+#endif /* SURFACE_SYS_SETUID_H */
