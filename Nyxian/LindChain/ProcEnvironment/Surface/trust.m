@@ -21,7 +21,7 @@
 
 #import <LindChain/ProcEnvironment/Surface/trust.h>
 #import <LindChain/ProcEnvironment/Surface/entitlement.h>
-#include <LindChain/ProcEnvironment/Surface/sys/host/bsd_types.h>
+#include <LindChain/ProcEnvironment/Surface/ksys/host/bsd_types.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

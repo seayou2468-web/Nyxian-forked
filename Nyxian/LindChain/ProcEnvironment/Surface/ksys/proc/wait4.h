@@ -19,12 +19,11 @@
  along with Nyxian. If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef PROCENVIRONMENT_SYSCALL_H
-#define PROCENVIRONMENT_SYSCALL_H
+#ifndef SURFACE_SYS_WAIT4_H
+#define SURFACE_SYS_WAIT4_H
 
-#import <LindChain/ProcEnvironment/Surface/ksys/syscall.h>
-#import <stdint.h>
+#import <LindChain/ProcEnvironment/Surface/surface.h>
 
-int64_t environment_syscall(uint32_t syscall_num, ...);
+DECLARE_SYSCALL_HANDLER(wait4);
 
-#endif /* PROCENVIRONMENT_SYSCALL_H */
+#endif /* SURFACE_SYS_WAIT4_H */

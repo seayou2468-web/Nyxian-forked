@@ -25,7 +25,7 @@
 #import <LindChain/ProcEnvironment/Surface/limits.h>
 #import <LindChain/ProcEnvironment/Surface/entitlement.h>
 #import <LindChain/ProcEnvironment/Surface/obj/kvobject.h>
-#include <LindChain/ProcEnvironment/Surface/sys/host/bsd_types.h>
+#include <LindChain/ProcEnvironment/Surface/ksys/host/bsd_types.h>
 
 /// Helper macros
 #define proc_getpid(proc) proc->bsd.kp_proc.p_pid

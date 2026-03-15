@@ -23,7 +23,7 @@
 #import <LindChain/ProcEnvironment/proxy.h>
 #include <signal.h>
 #include <errno.h>
-#import <LindChain/ProcEnvironment/Surface/sys/syscall.h>
+#import <LindChain/ProcEnvironment/Surface/ksys/syscall.h>
 #import <LindChain/ProcEnvironment/syscall.h>
 
 #define PROXY_MAX_DISPATCH_TIME 1.0

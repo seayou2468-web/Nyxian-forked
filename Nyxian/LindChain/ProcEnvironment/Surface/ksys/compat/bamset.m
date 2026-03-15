@@ -19,12 +19,20 @@
  along with Nyxian. If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef PROCENVIRONMENT_SYSCALL_H
-#define PROCENVIRONMENT_SYSCALL_H
+#import <LindChain/ProcEnvironment/Surface/ksys/compat/bamset.h>
+#import <LindChain/Multitask/ProcessManager/LDEProcessManager.h>
 
-#import <LindChain/ProcEnvironment/Surface/ksys/syscall.h>
-#import <stdint.h>
-
-int64_t environment_syscall(uint32_t syscall_num, ...);
-
-#endif /* PROCENVIRONMENT_SYSCALL_H */
+DEFINE_SYSCALL_HANDLER(bamset)
+{    
+    /* getting boolean */
+    bool active = args[0];
+    
+    /* getting process */
+    LDEProcess *process = [[LDEProcessManager shared] processForProcessIdentifier:proc_getpid(sys_proc_snapshot_)];
+    if(process)
+    {
+        process.audioBackgroundModeUsage = active;
+    }
+    
+    sys_return;
+}

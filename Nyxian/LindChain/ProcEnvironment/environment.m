@@ -21,6 +21,7 @@
 
 #import <LindChain/ProcEnvironment/environment.h>
 #import <LindChain/ProcEnvironment/syscall.h>
+#import <LindChain/ProcEnvironment/libmach.h>
 #import <LindChain/ProcEnvironment/Surface/extra/relax.h>
 #import <LindChain/Debugger/MachServer.h>
 #import <LindChain/LiveContainer/LCBootstrap.h>
@@ -111,6 +112,7 @@ void environment_init(EnvironmentRole role,
         
         /* initilizing subsystems of environment */
         environment_libproc_init();
+        environment_libmach_init();
         environment_application_init();
         environment_posix_spawn_init();
         environment_vfork_init();

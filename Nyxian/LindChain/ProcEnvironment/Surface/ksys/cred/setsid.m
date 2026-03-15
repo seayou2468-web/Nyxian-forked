@@ -19,12 +19,12 @@
  along with Nyxian. If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef PROCENVIRONMENT_SYSCALL_H
-#define PROCENVIRONMENT_SYSCALL_H
+#import <LindChain/ProcEnvironment/Surface/ksys/cred/setsid.h>
 
-#import <LindChain/ProcEnvironment/Surface/ksys/syscall.h>
-#import <stdint.h>
-
-int64_t environment_syscall(uint32_t syscall_num, ...);
-
-#endif /* PROCENVIRONMENT_SYSCALL_H */
+DEFINE_SYSCALL_HANDLER(setsid)
+{
+    kvo_wrlock(sys_proc_);
+    proc_setsid(sys_proc_, proc_getpid(sys_proc_));
+    kvo_unlock(sys_proc_);
+    sys_return;
+}

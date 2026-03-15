@@ -19,12 +19,16 @@
  along with Nyxian. If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef PROCENVIRONMENT_SYSCALL_H
-#define PROCENVIRONMENT_SYSCALL_H
+#ifndef SURFACE_SYS_VM_H
+#define SURFACE_SYS_VM_H
 
-#import <LindChain/ProcEnvironment/Surface/ksys/syscall.h>
-#import <stdint.h>
+#import <LindChain/ProcEnvironment/Syscall/mach_syscall_server.h>
 
-int64_t environment_syscall(uint32_t syscall_num, ...);
+DECLARE_SYSCALL_HANDLER(vm_read);
+DECLARE_SYSCALL_HANDLER(vm_write);
+DECLARE_SYSCALL_HANDLER(vm_allocate);
+DECLARE_SYSCALL_HANDLER(vm_deallocate);
+DECLARE_SYSCALL_HANDLER(vm_protect);
+DECLARE_SYSCALL_HANDLER(vm_region);
 
-#endif /* PROCENVIRONMENT_SYSCALL_H */
+#endif /* SURFACE_SYS_VM_H */

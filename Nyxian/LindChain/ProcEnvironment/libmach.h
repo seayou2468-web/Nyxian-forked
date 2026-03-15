@@ -19,12 +19,9 @@
  along with Nyxian. If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef PROCENVIRONMENT_SYSCALL_H
-#define PROCENVIRONMENT_SYSCALL_H
+#ifndef PROCENVIRONMENT_LIBMACH_H
+#define PROCENVIRONMENT_LIBMACH_H
 
-#import <LindChain/ProcEnvironment/Surface/ksys/syscall.h>
-#import <stdint.h>
+void environment_libmach_init(void);
 
-int64_t environment_syscall(uint32_t syscall_num, ...);
-
-#endif /* PROCENVIRONMENT_SYSCALL_H */
+#endif /* PROCENVIRONMENT_LIBMACH_H */

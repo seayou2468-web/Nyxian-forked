@@ -39,6 +39,7 @@
 #endif /* !JAILBREAK_ENV */
 
 @property (nonatomic,weak) LDEWindowSessionApplication *session;
+@property (nonatomic,strong) FDMapObject *fdMap;
 @property (nonatomic,strong) RBSProcessHandle *processHandle;
 @property (nonatomic,strong) RBSProcessMonitor *processMonitor;
 @property (nonatomic,strong) FBScene *scene;

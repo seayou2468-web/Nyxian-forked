@@ -28,6 +28,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <errno.h>
 
 #define SYSCALL_MAX_PAYLOAD     16384
 #define SYSCALL_SERVER_THREADS  4
@@ -44,20 +45,11 @@ typedef struct ksurface_proc ksurface_proc_snapshot_t;
 #define sys_proc_ ((ksurface_proc_t*)(sys_proc_snapshot_->header.orig))
 
 /* helping macros for returns and checks */
-#define sys_return_failure(errval) \
-    *err = errval; \
-    return -1
+#define sys_return_failure(errval)     *err = errval;     return -1
 
-#define sys_return \
-    return 0
+#define sys_return     return 0
 
-#define sys_need_in_ports(cnt, expected_disposition) \
-    if(in_ports.address == VM_MIN_ADDRESS || \
-       in_ports.count < cnt || \
-       in_ports.disposition != expected_disposition) \
-    { \
-        sys_return_failure(EINVAL); \
-    }
+#define sys_need_in_ports(cnt, expected_disposition)     if(in_ports.address == VM_MIN_ADDRESS ||        in_ports.count < cnt ||        in_ports.disposition != expected_disposition)     {         sys_return_failure(EINVAL);     }
 
 #define sys_in_ports ((mach_port_t*)in_ports.address)
     
@@ -87,48 +79,13 @@ typedef struct {
     errno_t                     err;            /* errno result value from the syscall */
 } syscall_reply_t;
 
-typedef int64_t (*syscall_handler_t)(
-    /*
-     * holds information about the process identity
-     * that made the syscall
-     * which is very important, because this is our security
-     * ensurace
-     */
-    ksurface_proc_snapshot_t        *proc_snapshot,
-                                     
-    /* request header */
-    recv_buffer_t                   *recv_buffer,
+#define SYSCALL_HANDLER_ARGS     ksurface_proc_snapshot_t        *proc_snapshot,     recv_buffer_t                   *recv_buffer,     int64_t                         *args,     mach_msg_ool_ports_descriptor_t in_ports,     mach_port_t                     **out_ports,     uint32_t                        *out_ports_cnt,     errno_t                         *err,     bool                            *reply
 
-    /*
-     * normal syscall arguments
-     */
-    int64_t                         *args,
+typedef int64_t (*syscall_handler_t)(SYSCALL_HANDLER_ARGS);
 
-    /* input and output ports */
-    mach_msg_ool_ports_descriptor_t in_ports,
-    mach_port_t                     **out_ports,
-    uint32_t                        *out_ports_cnt,
+#define DECLARE_SYSCALL_HANDLER(sysname)     int64_t syscall_server_handler_##sysname(SYSCALL_HANDLER_ARGS)
 
-    /*
-     * sets errno in the guest process by the client receiving it
-     * and setting errno from the reply
-     */
-    errno_t                         *err,
-                                     
-    /* syscall can decide if it wants to respond or not */
-    bool                            *reply
-);
-
-#define DEFINE_SYSCALL_HANDLER(sysname) int64_t syscall_server_handler_##sysname( \
-    ksurface_proc_snapshot_t        *proc_snapshot, \
-    recv_buffer_t                   *recv_buffer, \
-    int64_t                         *args, \
-    mach_msg_ool_ports_descriptor_t in_ports, \
-    mach_port_t                     **out_ports, \
-    uint32_t                        *out_ports_cnt, \
-    errno_t                         *err, \
-    bool                            *reply \
-)
+#define DEFINE_SYSCALL_HANDLER(sysname)     int64_t syscall_server_handler_##sysname(SYSCALL_HANDLER_ARGS)
 
 #define GET_SYSCALL_HANDLER(sysname) syscall_server_handler_##sysname
 

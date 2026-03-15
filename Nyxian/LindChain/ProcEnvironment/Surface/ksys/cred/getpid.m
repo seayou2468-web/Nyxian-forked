@@ -19,12 +19,15 @@
  along with Nyxian. If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef PROCENVIRONMENT_SYSCALL_H
-#define PROCENVIRONMENT_SYSCALL_H
+#import <LindChain/ProcEnvironment/Surface/ksys/cred/getpid.h>
+#import <LindChain/ProcEnvironment/Surface/proc/def.h>
 
-#import <LindChain/ProcEnvironment/Surface/ksys/syscall.h>
-#import <stdint.h>
+DEFINE_SYSCALL_HANDLER(getpid)
+{
+    return proc_getpid(sys_proc_snapshot_);
+}
 
-int64_t environment_syscall(uint32_t syscall_num, ...);
-
-#endif /* PROCENVIRONMENT_SYSCALL_H */
+DEFINE_SYSCALL_HANDLER(getppid)
+{
+    return proc_getppid(sys_proc_snapshot_);
+}
