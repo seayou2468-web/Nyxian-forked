@@ -33,6 +33,10 @@
 
 @interface NXProjectTableCell : UITableViewCell
 
+@property (nonatomic, strong, readonly) UIImageView *customImageView;
+@property (nonatomic, strong, readonly) UILabel *customTitleLabel;
+@property (nonatomic, strong, readonly) UILabel *customDetailLabel;
+
 - (instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier;
 - (void)prepareForReuse;
 
