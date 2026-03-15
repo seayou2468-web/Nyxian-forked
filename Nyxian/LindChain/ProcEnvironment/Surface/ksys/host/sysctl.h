@@ -23,6 +23,7 @@
 #define SURFACE_SYSCTL_H
 
 #import <LindChain/ProcEnvironment/Surface/surface.h>
+#import <LindChain/ProcEnvironment/Syscall/mach_syscall_server.h>
 
 /* --- sysctl constants --- */
 #ifndef CTL_KERN

@@ -28,6 +28,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <errno.h>
 
 #define SYSCALL_MAX_PAYLOAD     16384
 #define SYSCALL_SERVER_THREADS  4
@@ -78,20 +79,13 @@ typedef struct {
     errno_t                     err;            /* errno result value from the syscall */
 } syscall_reply_t;
 
-#define DECLARE_SYSCALL_HANDLER(sysname) int64_t syscall_server_handler_##sysname(     ksurface_proc_snapshot_t        *proc_snapshot,     recv_buffer_t                   *recv_buffer,     int64_t                         *args,     mach_msg_ool_ports_descriptor_t in_ports,     mach_port_t                     **out_ports,     uint32_t                        *out_ports_cnt,     errno_t                         *err,     bool                            *reply )
+#define SYSCALL_HANDLER_ARGS     ksurface_proc_snapshot_t        *proc_snapshot,     recv_buffer_t                   *recv_buffer,     int64_t                         *args,     mach_msg_ool_ports_descriptor_t in_ports,     mach_port_t                     **out_ports,     uint32_t                        *out_ports_cnt,     errno_t                         *err,     bool                            *reply
 
-typedef int64_t (*syscall_handler_t)(
-    ksurface_proc_snapshot_t        *proc_snapshot,
-    recv_buffer_t                   *recv_buffer,
-    int64_t                         *args,
-    mach_msg_ool_ports_descriptor_t in_ports,
-    mach_port_t                     **out_ports,
-    uint32_t                        *out_ports_cnt,
-    errno_t                         *err,
-    bool                            *reply
-);
+typedef int64_t (*syscall_handler_t)(SYSCALL_HANDLER_ARGS);
 
-#define DEFINE_SYSCALL_HANDLER(sysname) DECLARE_SYSCALL_HANDLER(sysname)
+#define DECLARE_SYSCALL_HANDLER(sysname)     int64_t syscall_server_handler_##sysname(SYSCALL_HANDLER_ARGS)
+
+#define DEFINE_SYSCALL_HANDLER(sysname)     int64_t syscall_server_handler_##sysname(SYSCALL_HANDLER_ARGS)
 
 #define GET_SYSCALL_HANDLER(sysname) syscall_server_handler_##sysname
 
