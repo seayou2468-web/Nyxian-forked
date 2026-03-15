@@ -54,6 +54,8 @@
 #import <LindChain/ProcEnvironment/Utils/klog.h>
 #import <LindChain/ProcEnvironment/Surface/surface.h>
 #import <LindChain/ProcEnvironment/Object/MachOObject.h>
+#import <LindChain/ProcEnvironment/Surface/sys/compat/mach_vm.h>
+#import <LindChain/ProcEnvironment/tfp.h>
 
 bool liveProcessIsAvailable(void);
 

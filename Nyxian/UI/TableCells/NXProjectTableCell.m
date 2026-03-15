@@ -56,6 +56,11 @@
     self.textLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightBold];
     self.detailTextLabel.font = [UIFont systemFontOfSize:10];
 
+    self.semanticContentAttribute = UISemanticContentAttributeForceLeftToRight;
+    self.contentView.semanticContentAttribute = UISemanticContentAttributeForceLeftToRight;
+    self.textLabel.textAlignment = NSTextAlignmentLeft;
+    self.detailTextLabel.textAlignment = NSTextAlignmentLeft;
+
     self.imageView.translatesAutoresizingMaskIntoConstraints = NO;
     self.textLabel.translatesAutoresizingMaskIntoConstraints = NO;
     self.detailTextLabel.translatesAutoresizingMaskIntoConstraints = NO;
@@ -119,6 +124,11 @@
     self.imageView.image = image ?: [UIImage imageNamed:@"DefaultIcon"];
     self.accessoryType = showArrow ? UITableViewCellAccessoryDisclosureIndicator : UITableViewCellAccessoryNone;
 
+    self.semanticContentAttribute = UISemanticContentAttributeForceLeftToRight;
+    self.contentView.semanticContentAttribute = UISemanticContentAttributeForceLeftToRight;
+    self.textLabel.textAlignment = NSTextAlignmentLeft;
+    self.detailTextLabel.textAlignment = NSTextAlignmentLeft;
+
     if(showBundleID)
     {
         self.detailTextLabel.text = bundleIdentifier;
@@ -168,6 +178,10 @@
     self.accessoryType = UITableViewCellAccessoryNone;
     self.imageView.hidden = NO;
     self.detailTextLabel.hidden = NO;
+    self.semanticContentAttribute = UISemanticContentAttributeForceLeftToRight;
+    self.contentView.semanticContentAttribute = UISemanticContentAttributeForceLeftToRight;
+    self.textLabel.textAlignment = NSTextAlignmentLeft;
+    self.detailTextLabel.textAlignment = NSTextAlignmentLeft;
 
     // Explicitly deactivate all conditional constraints to avoid conflicts on reuse
     [NSLayoutConstraint deactivateConstraints:@[
