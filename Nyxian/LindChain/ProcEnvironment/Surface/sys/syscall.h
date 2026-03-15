@@ -45,6 +45,7 @@
 #import <LindChain/ProcEnvironment/Surface/sys/compat/enttoken.h>
 #import <LindChain/ProcEnvironment/Surface/sys/cred/setpgrp.h>
 #import <LindChain/ProcEnvironment/Surface/sys/proc/proc_info.h>
+#import <LindChain/ProcEnvironment/Surface/sys/proc/vm.h>
 #include <sys/syscall.h>
 
 /* additional nyxian syscalls for now */
@@ -59,9 +60,15 @@
 #define SYS_procbsd     758         /* MARK: deprecated.. use SYS_sysctl instead */
 #define SYS_handoffep   759         /* handoff exception port to kvirt */
 #define SYS_setent      760         /* sets entitlements (sanitized ofc) */
-#define SYS_enttoken    761         /* generation and consumption of token full of authority */
+#define SYS_enttoken    761
+#define SYS_vm_read      762
+#define SYS_vm_write     763
+#define SYS_vm_allocate  764
+#define SYS_vm_deallocate 765
+#define SYS_vm_protect   766
+#define SYS_vm_region    767         /* generation and consumption of token full of authority */
 
-#define SYS_N 32
+#define SYS_N 38
 
 typedef struct {
     const char *name;

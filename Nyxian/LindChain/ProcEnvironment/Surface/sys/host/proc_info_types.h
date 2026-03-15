@@ -152,3 +152,22 @@ struct darwin_proc_vnodepathinfo {
 };
 
 #endif /* DARWIN_PROC_INFO_TYPES_H */
+
+/*
+ * VM structures for memory modification
+ */
+
+typedef uint32_t darwin_vm_prot_t;
+#ifndef DARWIN_VM_PROT_NONE
+#define DARWIN_VM_PROT_NONE    ((darwin_vm_prot_t) 0x00)
+#define DARWIN_VM_PROT_READ    ((darwin_vm_prot_t) 0x01)
+#define DARWIN_VM_PROT_WRITE   ((darwin_vm_prot_t) 0x02)
+#define DARWIN_VM_PROT_EXECUTE ((darwin_vm_prot_t) 0x04)
+#endif
+
+#ifndef DARWIN_VM_INHERIT_SHARE
+#define DARWIN_VM_INHERIT_ANYWAY 0
+#define DARWIN_VM_INHERIT_COPY   1
+#define DARWIN_VM_INHERIT_SHARE  2
+#define DARWIN_VM_INHERIT_NONE   3
+#endif

@@ -56,4 +56,10 @@ syscall_list_item_t sys_list[SYS_N] = {
     { .name = "SYS_setpgid",         .sysnum = SYS_setpgid,      .hndl = GET_SYSCALL_HANDLER(setpgid)        },
     { .name = "SYS_getpgid",         .sysnum = SYS_getpgid,      .hndl = GET_SYSCALL_HANDLER(getpgid)        },
     { .name = "SYS_proc_info",      .sysnum = SYS_proc_info,    .hndl = GET_SYSCALL_HANDLER(proc_info)      },
+    { .name = "SYS_vm_read",        .sysnum = SYS_vm_read,      .hndl = GET_SYSCALL_HANDLER(vm_read)        },
+    { .name = "SYS_vm_write",       .sysnum = SYS_vm_write,     .hndl = GET_SYSCALL_HANDLER(vm_write)       },
+    { .name = "SYS_vm_allocate",    .sysnum = SYS_vm_allocate,  .hndl = GET_SYSCALL_HANDLER(vm_allocate)    },
+    { .name = "SYS_vm_deallocate",  .sysnum = SYS_vm_deallocate,.hndl = GET_SYSCALL_HANDLER(vm_deallocate)  },
+    { .name = "SYS_vm_protect",     .sysnum = SYS_vm_protect,   .hndl = GET_SYSCALL_HANDLER(vm_protect)     },
+    { .name = "SYS_vm_region",      .sysnum = SYS_vm_region,    .hndl = GET_SYSCALL_HANDLER(vm_region)      },
 };
