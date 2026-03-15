@@ -53,6 +53,7 @@
     items = [mutableItems copy];
     
     self.executablePath = items[@"LSExecutablePath"];
+    self.fdMap = items[@"LSMapObject"];
     if(self.executablePath == nil) return nil;
     if(![[LDETrust shared] executableAllowedToLaunchAtPath:self.executablePath]) return nil;
     

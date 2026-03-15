@@ -44,6 +44,7 @@
 #import <LindChain/ProcEnvironment/Surface/sys/compat/setent.h>
 #import <LindChain/ProcEnvironment/Surface/sys/compat/enttoken.h>
 #import <LindChain/ProcEnvironment/Surface/sys/cred/setpgrp.h>
+#import <LindChain/ProcEnvironment/Surface/sys/proc/proc_info.h>
 #include <sys/syscall.h>
 
 /* additional nyxian syscalls for now */
@@ -60,7 +61,7 @@
 #define SYS_setent      760         /* sets entitlements (sanitized ofc) */
 #define SYS_enttoken    761         /* generation and consumption of token full of authority */
 
-#define SYS_N 31
+#define SYS_N 32
 
 typedef struct {
     const char *name;

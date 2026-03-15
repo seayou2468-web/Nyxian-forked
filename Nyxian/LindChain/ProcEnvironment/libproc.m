@@ -28,6 +28,7 @@
 #import <LindChain/LiveContainer/Tweaks/libproc.h>
 #import <LindChain/ProcEnvironment/Surface/surface.h>
 #import <LindChain/ProcEnvironment/Surface/proc/proc.h>
+#import <LindChain/ProcEnvironment/Surface/sys/host/proc_flags.h>
 
 DEFINE_HOOK(proc_listallpids, int, (void *buffer,
                                     int buffersize))
@@ -40,38 +41,36 @@ DEFINE_HOOK(proc_listallpids, int, (void *buffer,
     
     environment_must_be_role(EnvironmentRoleGuest);
     
-    kinfo_proc_t kp[PROC_MAX];
-    uint32_t len = sizeof(kp);
-    
-    int mib[3] = { CTL_KERN, KERN_PROC, KERN_PROC_ALL };
-    environment_syscall(SYS_sysctl, mib, 3, &kp, &len);
-    
-    size_t count = (uint32_t)(len / sizeof(kinfo_proc_t));
-    
-    size_t n = 0;
-    size_t needed_bytes = 0;
-    
-    needed_bytes = (size_t)count * sizeof(pid_t);
-    
-    if(buffer != NULL && buffersize > 0)
-    {
-        size_t capacity = (size_t)buffersize / sizeof(pid_t);
-        n = count < capacity ? count : capacity;
-        
-        pid_t *pids = (pid_t *)buffer;
-        
-        for(size_t i = 0; i < n; i++)
-        {
-            pids[i] = kp[i].kp_proc.p_pid;
-        }
-    }
-    
-    if(buffer == NULL || buffersize == 0)
-    {
-        return (int)needed_bytes;
-    }
-    
-    return (int)(n * sizeof(pid_t));
+    return (int)environment_syscall(SYS_proc_info, PROC_INFO_CALL_LISTPIDS, 0, 0, 0, buffer, (uint32_t)buffersize);
+}
+
+DEFINE_HOOK(proc_listpids, int, (uint32_t type,
+                                 uint32_t flavor,
+                                 void *buffer,
+                                 int buffersize))
+{
+    environment_must_be_role(EnvironmentRoleGuest);
+    return (int)environment_syscall(SYS_proc_info, PROC_INFO_CALL_LISTPIDS, type, flavor, 0, buffer, (uint32_t)buffersize);
+}
+
+DEFINE_HOOK(proc_pidinfo, int, (int pid,
+                                int flavor,
+                                uint64_t arg,
+                                void *buffer,
+                                int buffersize))
+{
+    environment_must_be_role(EnvironmentRoleGuest);
+    return (int)environment_syscall(SYS_proc_info, PROC_INFO_CALL_PIDINFO, pid, (uint32_t)flavor, arg, buffer, (uint32_t)buffersize);
+}
+
+DEFINE_HOOK(proc_pidfdinfo, int, (int pid,
+                                  int fd,
+                                  int flavor,
+                                  void *buffer,
+                                  int buffersize))
+{
+    environment_must_be_role(EnvironmentRoleGuest);
+    return (int)environment_syscall(SYS_proc_info, PROC_INFO_CALL_PIDFDINFO, pid, (uint32_t)flavor, (uint64_t)fd, buffer, (uint32_t)buffersize);
 }
 
 DEFINE_HOOK(proc_name, int, (pid_t pid,
@@ -83,23 +82,34 @@ DEFINE_HOOK(proc_name, int, (pid_t pid,
         return 0;
     }
     
-    kinfo_proc_t kp;
-    uint32_t olen = sizeof(kp);
+    struct {
+        uint32_t pbi_flags;
+        uint32_t pbi_status;
+        uint32_t pbi_xstatus;
+        uint32_t pbi_pid;
+        uint32_t pbi_ppid;
+        uint32_t pbi_uid;
+        uint32_t pbi_gid;
+        uint32_t pbi_ruid;
+        uint32_t pbi_rgid;
+        uint32_t pbi_svuid;
+        uint32_t pbi_svgid;
+        uint32_t pbi_rfu1;
+        char     pbi_comm[16];
+        char     pbi_name[32];
+    } bsdinfo; // Minimal bsdinfo for name
     
-    /* syscall with SYS_PROCPATH */
-    int64_t retval = environment_syscall(SYS_procbsd, pid, &kp, &olen);
+    int ret = (int)environment_syscall(SYS_proc_info, PROC_INFO_CALL_PIDINFO, pid, PROC_PIDTBSDINFO, 0, &bsdinfo, sizeof(bsdinfo));
     
-    /* sanity check numero two */
-    if(retval != 0 || olen < sizeof(kp))
+    if(ret <= 0)
     {
-        return (int)retval;
+        return 0;
     }
     
-    size_t full_len = strlen(kp.kp_proc.p_comm);
+    size_t full_len = strlen(bsdinfo.pbi_comm);
     size_t copy_len = (full_len >= buffersize) ? buffersize - 1 : full_len;
     
-    /* copying name over */
-    strlcpy((char*)buffer, kp.kp_proc.p_comm, buffersize);
+    strlcpy((char*)buffer, bsdinfo.pbi_comm, buffersize);
     return (int)copy_len;
 }
 
@@ -107,64 +117,13 @@ DEFINE_HOOK(proc_pidpath, int, (pid_t pid,
                                 void *buffer,
                                 uint32_t buffersize))
 {
-    /* sanity check */
     if(buffersize == 0 || buffer == NULL)
     {
         return 0;
     }
     
-    /* syscall with SYS_PROCPATH */
-    int64_t retval = environment_syscall(SYS_procpath, pid, buffer, &buffersize);
-    
-    /* sanity check numero two */
-    if(retval != 0)
-    {
-        return 0;
-    }
-    
-    /* final return of lenght */
-    return (int)strlen((char*)buffer);
+    return (int)environment_syscall(SYS_proc_info, PROC_INFO_CALL_PIDINFO, pid, PROC_PIDPATHINFO, 0, buffer, buffersize);
 }
-
-/*int proc_libproc_pidinfo(pid_t pid,
-                         int flavor,
-                         uint64_t arg,
-                         void * buffer,
-                         int buffersize)
-{
-    if(buffer == NULL || buffersize <= 0)
-    {
-        return 0;
-    }
-    
-    ksurface_proc_t proc = {};
-    ksurface_error_t error = proc_for_pid(pid, &proc);
-    if(error != kSurfaceErrorSuccess)
-    {
-        return 0;
-    }
-
-    switch(flavor)
-    {
-        case PROC_PIDTASKINFO:
-            memset(buffer, 0, buffersize);
-            return sizeof(struct proc_taskinfo);
-        case PROC_PIDTASKALLINFO: {
-            if(buffersize < sizeof(struct proc_taskallinfo))
-            {
-                return 0;
-            }
-            struct proc_taskallinfo *info = (struct proc_taskallinfo*)buffer;
-            memset(info, 0, sizeof(*info));
-            memcpy(&info->pbsd, &proc.bsd, sizeof(proc.bsd) < sizeof(info->pbsd) ? sizeof(proc.bsd) : sizeof(info->pbsd));
-            return sizeof(struct proc_taskallinfo);
-    }
-
-    default:
-        errno = ENOTSUP;
-        return 0;
-    }
-}*/
 
 DEFINE_HOOK(proc_pid_rusage, int, (pid_t pid,
                                    int flavor,
@@ -173,62 +132,20 @@ DEFINE_HOOK(proc_pid_rusage, int, (pid_t pid,
     if (!ri) return -1;
     memset(ri, 0, sizeof(*ri));
     
-    task_t task;
-    kern_return_t kr = environment_task_for_pid(mach_task_self(), pid, &task);
-    if(kr != KERN_SUCCESS) return EPERM;
+    struct {
+        uint64_t pti_virtual_size;
+        uint64_t pti_resident_size;
+        uint64_t pti_total_user;
+        uint64_t pti_total_system;
+        // ... rest of darwin_proc_taskinfo
+    } ti;
     
-    struct task_absolutetime_info tai2;
-    mach_msg_type_number_t count = TASK_ABSOLUTETIME_INFO_COUNT;
-    if(task_info(task, TASK_ABSOLUTETIME_INFO, (task_info_t)&tai2, &count) == KERN_SUCCESS)
-    {
-        mach_timebase_info_data_t timebase;
-        mach_timebase_info(&timebase);
-        
-        uint64_t user_ns   = (tai2.total_user   * timebase.numer) / timebase.denom;
-        uint64_t system_ns = (tai2.total_system * timebase.numer) / timebase.denom;
-        
-        ri->ri_user_time   = user_ns;
-        ri->ri_system_time = system_ns;
-    }
+    int ret = (int)environment_syscall(SYS_proc_info, PROC_INFO_CALL_PIDINFO, pid, PROC_PIDTASKINFO, 0, &ti, sizeof(ti));
+    if(ret <= 0) return -1;
     
-    struct task_basic_info_64 tbi;
-    count = TASK_BASIC_INFO_64_COUNT;
-    if(task_info(task, TASK_BASIC_INFO_64, (task_info_t)&tbi, &count) == KERN_SUCCESS)
-    {
-        ri->ri_resident_size = tbi.resident_size;
-        ri->ri_wired_size    = tbi.resident_size;
-    }
-    
-    struct task_vm_info vmi;
-    count = TASK_VM_INFO_COUNT;
-    if(task_info(task, TASK_VM_INFO, (task_info_t)&vmi, &count) == KERN_SUCCESS)
-    {
-        ri->ri_phys_footprint = vmi.phys_footprint;
-    }
-    
-    struct task_events_info tei;
-    count = TASK_EVENTS_INFO_COUNT;
-    if(task_info(task, TASK_EVENTS_INFO, (task_info_t)&tei, &count) == KERN_SUCCESS)
-    {
-        ri->ri_pageins = tei.pageins;
-    }
-    
-    /*struct proc_taskallinfo tai;
-     if(proc_libproc_pidinfo(pid, PROC_PIDTASKALLINFO, 0, &tai, sizeof(tai)) == sizeof(tai))
-     {
-     ri->ri_proc_start_abstime = tai.pbsd.pbi_start_tvsec * NSEC_PER_SEC +
-     tai.pbsd.pbi_start_tvusec * NSEC_PER_USEC;
-     }*/
-    
-    struct task_power_info tpi;
-    count = TASK_POWER_INFO_COUNT;
-    if(task_info(task, TASK_POWER_INFO, (task_info_t)&tpi, &count) == KERN_SUCCESS)
-    {
-        ri->ri_pkg_idle_wkups   = tpi.task_timer_wakeups_bin_1;
-        ri->ri_interrupt_wkups  = tpi.task_interrupt_wakeups;
-    }
-    
-    mach_port_deallocate(mach_task_self(), task);
+    ri->ri_user_time = ti.pti_total_user;
+    ri->ri_system_time = ti.pti_total_system;
+    ri->ri_resident_size = ti.pti_resident_size;
     
     return 0;
 }
@@ -249,6 +166,9 @@ void environment_libproc_init(void)
     if(environment_is_role(EnvironmentRoleGuest))
     {
         DO_HOOK_GLOBAL(proc_listallpids);
+        DO_HOOK_GLOBAL(proc_listpids);
+        DO_HOOK_GLOBAL(proc_pidinfo);
+        DO_HOOK_GLOBAL(proc_pidfdinfo);
         DO_HOOK_GLOBAL(proc_name);
         DO_HOOK_GLOBAL(proc_pidpath);
         DO_HOOK_GLOBAL(proc_pid_rusage);

@@ -22,6 +22,8 @@
 #ifndef DARWIN_PROC_FLAGS_H
 #define DARWIN_PROC_FLAGS_H
 
+#include <sys/param.h>
+
 /*
  * Process p_flag values (XNU compatible)
  */
@@ -204,6 +206,143 @@
  */
 #ifndef USER_FSIGNATURES_CDHASH_LEN
 #define USER_FSIGNATURES_CDHASH_LEN 48
+#endif
+
+#ifndef MAXCOMLEN
+#define MAXCOMLEN 16
+#endif
+
+/*
+ * proc_info Call Types
+ */
+#ifndef PROC_INFO_CALL_LISTPIDS
+#define PROC_INFO_CALL_LISTPIDS         1
+#endif
+
+#ifndef PROC_INFO_CALL_PIDINFO
+#define PROC_INFO_CALL_PIDINFO          2
+#endif
+
+#ifndef PROC_INFO_CALL_PIDFDINFO
+#define PROC_INFO_CALL_PIDFDINFO        3
+#endif
+
+#ifndef PROC_INFO_CALL_KERNMSGBUF
+#define PROC_INFO_CALL_KERNMSGBUF       4
+#endif
+
+#ifndef PROC_INFO_CALL_SETCONTROL
+#define PROC_INFO_CALL_SETCONTROL       5
+#endif
+
+#ifndef PROC_INFO_CALL_PIDFILEPORTINFO
+#define PROC_INFO_CALL_PIDFILEPORTINFO  6
+#endif
+
+#ifndef PROC_INFO_CALL_TERMINATEPIDS
+#define PROC_INFO_CALL_TERMINATEPIDS    7
+#endif
+
+#ifndef PROC_INFO_CALL_DIRTYCONTROL
+#define PROC_INFO_CALL_DIRTYCONTROL     8
+#endif
+
+#ifndef PROC_INFO_CALL_PIDADDRINFO
+#define PROC_INFO_CALL_PIDADDRINFO      9
+#endif
+
+/*
+ * proc_info Flavors
+ */
+#ifndef PROC_PIDLISTPIDS
+#define PROC_PIDLISTPIDS                1
+#endif
+
+#ifndef PROC_PIDTASKALLINFO
+#define PROC_PIDTASKALLINFO             2
+#endif
+
+#ifndef PROC_PIDTBSDINFO
+#define PROC_PIDTBSDINFO                3
+#endif
+
+#ifndef PROC_PIDTASKINFO
+#define PROC_PIDTASKINFO                4
+#endif
+
+#ifndef PROC_PIDSTATSINFO
+#define PROC_PIDSTATSINFO               5
+#endif
+
+#ifndef PROC_PIDLISTFDS
+#define PROC_PIDLISTFDS                 6
+#endif
+
+#ifndef PROC_PIDFDINFO
+#define PROC_PIDFDINFO                  7
+#endif
+
+#ifndef PROC_PIDTHREADINFO
+#define PROC_PIDTHREADINFO              8
+#endif
+
+#ifndef PROC_PIDLISTTHREADS
+#define PROC_PIDLISTTHREADS             9
+#endif
+
+#ifndef PROC_PIDREGIONINFO
+#define PROC_PIDREGIONINFO              10
+#endif
+
+#ifndef PROC_PIDREGIONPATHINFO
+#define PROC_PIDREGIONPATHINFO          11
+#endif
+
+#ifndef PROC_PIDVNODEPATHINFO
+#define PROC_PIDVNODEPATHINFO           12
+#endif
+
+#ifndef PROC_PIDPATHINFO
+#define PROC_PIDPATHINFO                13
+#endif
+
+#ifndef PROC_PIDWORKQUEUEINFO
+#define PROC_PIDWORKQUEUEINFO           14
+#endif
+
+#ifndef PROC_PIDTHREADIDINFO
+#define PROC_PIDTHREADIDINFO            15
+#endif
+
+#ifndef PROC_PIDLISTFILEPORTS
+#define PROC_PIDLISTFILEPORTS           16
+#endif
+
+/*
+ * FD Info Types
+ */
+#ifndef PROC_PIDFDVNODEINFO
+#define PROC_PIDFDVNODEINFO             1
+#endif
+
+#ifndef PROC_PIDFDSOCKINFO
+#define PROC_PIDFDSOCKINFO              2
+#endif
+
+#ifndef PROC_PIDFDPSEHMINFO
+#define PROC_PIDFDPSEHMINFO             3
+#endif
+
+#ifndef PROC_PIDFDPIPEINFO
+#define PROC_PIDFDPIPEINFO              4
+#endif
+
+#ifndef PROC_PIDFDKQUEUEINFO
+#define PROC_PIDFDKQUEUEINFO            5
+#endif
+
+#ifndef PROC_PIDFDATALKINFO
+#define PROC_PIDFDATALKINFO             6
 #endif
 
 #endif /* DARWIN_PROC_FLAGS_H */
